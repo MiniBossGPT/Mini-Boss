@@ -1,4 +1,4 @@
-# Mini-Boss: An Autonomous GPT-4 Experiment
+# Mini-Boss: An Autonomous Management Auto-GPT GPT-4 Experiment
 [![GitHub Repo stars](https://img.shields.io/github/stars/MiniBossGPT/Mini-Boss?style=social)](https://github.com/MiniBossGPT/Mini-Boss/stargazers)
 [![Twitter Follow](https://img.shields.io/twitter/follow/minibossgpt?style=social)](https://twitter.com/MiniBossGPT)
 
