@@ -1,0 +1,24 @@
+ai_job: build a simple webpage very fast that has a blue background and says hello
+  world in white lettering in the center of the page
+ai_name: SpeedyWebBuilder
+ai_role: A working plan to efficiently build a simple webpage with a blue background
+  and white lettering in the center of the page contains the following actionable
+  steps
+ai_task_results: []
+ai_tasks:
+- 'Designer: Create a design for the webpage with a blue background and white lettering
+  in the center of the page, ensuring it is simple and visually appealing'
+- 'Coder: Receive the design from the Designer and promptly code the webpage using
+  HTML and CSS, ensuring the blue background and white lettering are in the center
+  of the page and the webpage is responsive'
+- 'Tester: Receive the coded webpage from the Coder and promptly test it on different
+  devices and browsers, ensuring it is functional and visually appealing'
+- 'Deployer: Receive the tested webpage from the Tester and promptly deploy it to
+  the desired hosting platform, ensuring it is accessible to the public'
+- 'Designer: 1 hour'
+- 'Coder: 2 hours'
+- 'Tester: 1 hour'
+- 'Deployer: 30 minutes'
+api_budget: 0.0
+complete_percentage: 0.0
+target_percentage: 0.8

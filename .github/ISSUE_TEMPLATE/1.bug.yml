@@ -1,0 +1,103 @@
+name: Bug report 🐛
+description: Create a bug report for Mini-Boss.
+labels: ['status: needs triage']
+body:
+  - type: markdown
+    attributes:
+      value: |
+        ### ⚠️ Before you continue
+        * Check out our [backlog], [roadmap] and join our [discord] to discuss what's going on
+        * If you need help, you can ask in the [discussions] section or in [#tech-support]
+        * **Throughly search the [existing issues] before creating a new one**
+
+        [discussions]: https://github.com/MiniBossGPT/Mini-Boss/discussions
+        [existing issues]: https://github.com/MiniBossGPT/Mini-Boss/issues
+  - type: checkboxes
+    attributes:
+      label: ⚠️ Search for existing issues first ⚠️
+      description: >
+        Please [search the history](https://github.com/MiniBossGPT/Mini-Boss/issues)
+        to see if an issue already exists for the same problem.
+      options:
+        - label: I have searched the existing issues, and there is no existing issue for my problem
+          required: true
+  - type: markdown
+    attributes:
+      value: |
+        Please provide a searchable summary of the issue in the title above ⬆️.
+
+        ⚠️ SUPER-busy repo, please help the volunteer maintainers.
+        The less time we spend here, the more time we spend building AutoGPT.
+
+        Please help us help you:
+        - Does it work on current `main` (https://github.com/MiniBossGPT/Mini-Boss/tree/main)?
+        - Search for existing issues, "add comment" is tidier than "new issue"
+        - Provide relevant info:
+          - Provide commit-hash (`git rev-parse HEAD` gets it)
+          - If it's a pip/packages issue, provide pip version, python version
+          - If it's a crash, provide traceback.
+  - type: dropdown
+    attributes:
+      label: Which Operating System are you using?
+      description: >
+        Please select the operating system you were using to run Mini-Boss when this problem occurred.
+      options:
+        - Windows
+        - Linux
+        - MacOS
+        - Docker
+        - Devcontainer / Codespace
+        - Windows Subsystem for Linux (WSL)
+        - Other (Please specify in your problem)
+    validations:
+      required: true
+  - type: dropdown
+    attributes:
+      label: Which version of Mini-Boss are you using?
+      description: |
+        Please select which version of Mini-Boss you were using when this issue occurred.
+      options:
+        - Latest Release
+        - Main (branch)
+    validations:
+      required: true
+  - type: dropdown
+    attributes:
+      label: GPT-3 or GPT-4?
+      description: >
+        If you are using Mini-Boss with `--gpt3only`, your problems may be caused by
+        the [limitations](https://github.com/Significant-Gravitas/Auto-GPT/issues?q=is%3Aissue+label%3A%22AI+model+limitation%22) of GPT-3.5.
+      options:
+        - GPT-3.5
+        - GPT-4
+    validations:
+      required: true
+  - type: textarea
+    attributes:
+      label: Steps to reproduce 🕹
+      description: |
+        **⚠️ Issues that we can't reproduce will be closed.**
+  - type: textarea
+    attributes:
+      label: Current behavior 😯
+        You can copy it from your terminal or from `logs/activity.log`.
+        This will help us understand your issue better!
+
+        <details>
+        <summary><i>Example</i></summary>
+        ```log
+        INFO NEXT ACTION:  COMMAND = execute_shell  ARGUMENTS = {'command_line': 'some_command'}
+        INFO -=-=-=-=-=-=-= COMMAND AUTHORISED BY USER -=-=-=-=-=-=-=
+        Traceback (most recent call last):
+        File "/home/anaconda3/lib/python3.9/site-packages/openai/api_requestor.py", line 619, in _interpret_response
+        self._interpret_response_line(
+        File "/home/anaconda3/lib/python3.9/site-packages/openai/api_requestor.py", line 682, in _interpret_response_line
+        raise self.handle_error_response(
+        openai.error.InvalidRequestError: This model's maximum context length is 8191 tokens, however you requested 10982 tokens (10982 in your prompt; 0 for the completion). Please reduce your prompt; or completion length.
+        ```
+        </details>
+      value: |
+        ```log
+        <insert your logs here>
+        ```
+
