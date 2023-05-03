@@ -1,4 +1,4 @@
-# Mini-Boss: An Autonomous Management Auto-GPT GPT-4 Experiment
+# Mini-Boss: Auto-GPT Orchestrator for Scalable AI-powered Task Management
 [![GitHub Repo stars](https://img.shields.io/github/stars/MiniBossGPT/Mini-Boss?style=social)](https://github.com/MiniBossGPT/Mini-Boss/stargazers)
 [![Twitter Follow](https://img.shields.io/twitter/follow/minibossgpt?style=social)](https://twitter.com/MiniBossGPT)
 
@@ -13,19 +13,17 @@
 
 ### 🔴 🔴 🔴  Urgent: USE `main`  🔴 🔴 🔴
 
-The `main` branch may often be in a **broken** state but is all we have right now/.
+The `main` branch may often be in a **broken** state but is all we have right now.
 
 <hr/>
 
 
-Mini-Boss is an experimental open-source application showcasing the capabilities of the GPT-4 language model and Auto-GPT (https://github.com/MiniBossGPT/Mini-Boss). 
+Mini-Boss is an experimental open-source application showcasing the capabilities of the GPT-4 language model and Auto-GPT (https://github.com/Significant-Gravitas/Auto-GPT). 
 This program, driven by Auto-GPT on top of GPT-4, chains together LLM "thoughts", to autonomously achieve whatever goal you set. As one of the first examples of GPT-4 running fully autonomously, Mini-Boss pushes the boundaries of what is possible with AI.
 
 <h2 align="center"> Demo March 3rd 2023 </h2>
 
-[//]: # (https://user-images.githubusercontent.com/70048414/232352935-55c6bf7c-3958-406e-8610-0913475a0b05.mp4)
 
-Demo made by <a href=https://twitter.com/BlakeWerlinger>Blake Werlinger</a>
 
 <h2 align="center"> 💖 Help Fund Mini-Boss's Development 💖</h2>
 <p align="center">
@@ -52,21 +50,20 @@ Your support is greatly appreciated. Development of this free, open-source proje
 
 Please see the [documentation][docs] for full setup instructions and configuration options.
 
-[docs]: https://docs.agpt.co/
 
 ## 📖 Documentation
 * [⚙️ Setup][docs/setup]
 * [💻 Usage][docs/usage]
 * [🔌 Plugins][docs/plugins]
 * Configuration
-  * [🔍 Web Search](https://docs.agpt.co/configuration/search/)
-  * [🧠 Memory](https://docs.agpt.co/configuration/memory/)
-  * [🗣️ Voice (TTS)](https://docs.agpt.co/configuration/voice/)
-  * [🖼️ Image Generation](https://docs.agpt.co/configuration/imagegen/)
+  * [🧠 Auto-GPT](https://github.com/Significant-Gravitas/Auto-GPT)
 
-[docs/setup]: https://docs.agpt.co/setup/
-[docs/usage]: https://docs.agpt.co/usage/
-[docs/plugins]: https://docs.agpt.co/plugins/
+
+[docs]: https://github.com/MiniBossGPT/Mini-Boss/blob/main/docs/index.md
+[docs/setup]: https://github.com/MiniBossGPT/Mini-Boss/blob/main/docs/setup.md
+[docs/usage]: https://github.com/MiniBossGPT/Mini-Boss/blob/main/docs/usage.md
+[docs/plugins]: https://github.com/MiniBossGPT/Mini-Boss/blob/main/docs/plugins.md
+
 
 ## ⚠️ Limitations
 
@@ -97,7 +94,7 @@ Stay up-to-date with the latest news, updates, and insights about Mini-Boss by f
 We look forward to connecting with you and hearing your thoughts, ideas, and experiences with Mini-Boss. Join us on Twitter and let's explore the future of AI together!
 
 <p align="center">
-  <a href="https://star-history.com/#MiniBossGPT/auto-gpt&Date">
-    <img src="https://api.star-history.com/svg?repos=MiniBossGPT/auto-gpt&type=Date" alt="Star History Chart">
+  <a href="https://star-history.com/#MiniBossGPT/mini-boss&Date">
+    <img src="https://api.star-history.com/svg?repos=MiniBossGPT/mini-boss&type=Date" alt="Star History Chart">
   </a>
 </p>
