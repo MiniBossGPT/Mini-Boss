@@ -86,7 +86,7 @@ def run_miniboss(
     #   home directory) and have it come in as a command line argument or part of
     #   the env file.
     if workspace_directory is None:
-        workspace_directory = Path(__file__).parent / "miniboss_workspace"
+        workspace_directory = Path(__file__).parent.parent / "miniboss_workspace"
     else:
         workspace_directory = Path(workspace_directory)
     # TODO: pass in the boss_settings file and the env file and have them cloned into

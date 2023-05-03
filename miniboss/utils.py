@@ -98,7 +98,7 @@ def readable_file_size(size, decimal_places=2):
 def get_bulletin_from_web():
     try:
         response = requests.get(
-            "https://raw.githubusercontent.com/Significant-Gravitas/Mini-Boss/master/BULLETIN.md"
+            "https://raw.githubusercontent.com/MiniBossGPT/Mini-Boss/main/BULLETIN.md"
         )
         if response.status_code == 200:
             return response.text

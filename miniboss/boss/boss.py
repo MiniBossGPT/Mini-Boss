@@ -314,8 +314,8 @@ class Boss:
                 buddy_action_count = 0
                 while not BUDDY_JOB_COMPLETE:
                     if buddy_workspace_directory is None:
-                        workspace_name = "buddy_{}_workspace".format(i)
-                        buddy_workspace_directory = Path(__file__).parent.parent / workspace_name
+                        workspace_name = "miniboss_workspace/buddy_{}_workspace".format(i)
+                        buddy_workspace_directory = Path(__file__).parent.parent.parent / workspace_name
                     else:
                         buddy_workspace_directory = Path(buddy_workspace_directory)
                     workspace_directory = Jobspace.make_workspace(buddy_workspace_directory)
