@@ -109,7 +109,7 @@ Get your OpenAI API key from: [https://platform.openai.com/account/api-keys](htt
 
 ### Configuration (follow guide for Auto-GPT)
 
-1. Find the file named `.env.template` in the main `Mini-Boss` folder. This file may
+1. Find the file named `.env.template` in the main `Auto-GPT` folder. This file may
     be hidden by default in some operating systems due to the dot prefix. To reveal
     hidden files, follow the instructions for your specific operating system:
     [Windows][show hidden files/Windows], [macOS][show hidden files/macOS].
@@ -186,7 +186,7 @@ docker run -it --env-file=.env -v $PWD:/app mini-boss
 docker run -it --env-file=.env -v $PWD:/app --rm mini-boss --gpt3only --continuous
 ```
 
-[docker-compose file]: https://github.com/MiniBossGPT/Mini-Boss/blob/main/docker-compose.yml
+[docker-compose file]: https://github.com/MiniBossGPT/Mini-Boss/blob/master/docker-compose.yml
 
 
 ### Run with Dev Container

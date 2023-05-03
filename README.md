@@ -2,8 +2,9 @@
 [![GitHub Repo stars](https://img.shields.io/github/stars/MiniBossGPT/Mini-Boss?style=social)](https://github.com/MiniBossGPT/Mini-Boss/stargazers)
 [![Twitter Follow](https://img.shields.io/twitter/follow/minibossgpt?style=social)](https://twitter.com/MiniBossGPT)
 
-
-![MiniBossGPT](https://raw.githubusercontent.com/MiniBossGPT/Mini-Boss/main/DALE_2_MINI_BOSS.PNG)
+<p align="center">
+  <img src="https://raw.githubusercontent.com/MiniBossGPT/Mini-Boss/master/DALE_2_MINI_BOSS.PNG" width="60%" height="60%">
+</p>
 
 
 
@@ -11,33 +12,67 @@
 
 <hr/>
 
-### 🔴 🔴 🔴  Urgent: USE `main`  🔴 🔴 🔴
 
-The `main` branch may often be in a **broken** state but is all we have right now.
-
-<hr/>
-
-
-Mini-Boss is an experimental open-source application showcasing the capabilities of the GPT-4 language model and Auto-GPT (https://github.com/Significant-Gravitas/Auto-GPT). 
-This program, driven by Auto-GPT on top of GPT-4, chains together LLM "thoughts", to autonomously achieve whatever goal you set. As one of the first examples of GPT-4 running fully autonomously, Mini-Boss pushes the boundaries of what is possible with AI.
-
+Mini-Boss is an innovative open-source project that harnesses the power of the GPT-4 language model and Auto-GPT (https://github.com/Significant-Gravitas/Auto-GPT). Leveraging Auto-GPT on the foundation of GPT-4, this application seamlessly connects LLM "thoughts" to autonomously accomplish any objective you define. As an early example of fully autonomous GPT-4 implementation, Mini-Boss is redefining the frontiers of AI capabilities.
 <h2 align="center"> Demo March 3rd 2023 </h2>
 
 
+<p align="center">
+  <img src="https://raw.githubusercontent.com/MiniBossGPT/Mini-Boss/master/console_example.png" width="90%" height="90%">
+</p>
+
 
 <h2 align="center"> 💖 Help Fund Mini-Boss's Development 💖</h2>
-<p align="center">
+<p align="left">
 If you can spare a coffee, you can help to cover the costs of developing Mini-Boss and help to push the boundaries of fully autonomous AI!
 Your support is greatly appreciated. Development of this free, open-source project is made possible by all the <a href="https://github.com/MiniBossGPT/Mini-Boss//graphs/contributors">contributors</a> and <a href="https://github.com/sponsors/MiniBossGPT">sponsors</a>. If you'd like to sponsor this project and have your avatar or company logo appear below <a href="https://github.com/sponsors/MiniBossGPT">click here</a>.
+
+Your support goes a long way in advancing Mini-Boss and pushing the limits of fully autonomous AI! If you can contribute the cost of a coffee, you'll be helping to cover development expenses and enabling us to continue creating this free, open-source project. Every contribution makes a difference, and we're truly grateful for your generosity.
+
+By sponsoring Mini-Boss, you'll be recognized as a driving force behind this innovative project. Click <a href="https://github.com/sponsors/MiniBossGPT">here</a> to become a sponsor and have your avatar or company logo featured below, showcasing your invaluable support for the development of Mini-Boss.
 </p>
 
 
 
 ## 🚀 Features
 
-- 💾 Dynamic Long-term and short-term memory management through isolation and a feed forward mechanism for the workers
-- 🧠 All buddy workers for task completion are instances of Auto-GPT
-- 🔗 Therefore all existing and future capabilities of Auto-GPT are available to Mini-Boss
+1. 🎯 **Intelligent Work Plan Generation** 
+   - By creating a top-level GPT-4 LLM instance called MiniBoss, users can submit their plan. MiniBoss utilizes LLM to generate an actionable work plan, incorporating the first memory separation to prevent context and history loss due to token limits.  
+2. 🤝 **Buddy System Integration** 
+   - MiniBoss launches a Buddy (a second GPT-4 LLM instance) to handle the assigned job. The Buddy then initiates a subprocess of Auto-GPT, fully integrating the Auto-GPT ecosystem.  
+3. 🔗 **Direct Auto-GPT Interaction** 
+   - Users interact directly with Auto-GPT. Once Auto-GPT completes the task and shuts down, control reverts to the Buddy, which employs LLM for self-reflection and self-assessment of the output.  
+4. 📊 **Result Evaluation and Reassignment** 
+   - Upon task completion, the Buddy notifies MiniBoss, which then reflects on the result and assigns a score or grade. If the score fails to meet the preconfigured threshold, MiniBoss launches a new Buddy for the same job.  
+5. 🧵 **Multithreading with Auto-GPT Continuous Mode (In Progress)** 
+   - The system will introduce multithreading to work with Auto-GPT in continuous mode, enabling the launch of multiple workers and selection of the best results.  
+6. ⏭️ **Sequential Task Completion** 
+   - When MiniBoss determines that a Buddy has successfully completed the task, it launches a new Buddy for the next job in the sequence.  
+7. 🔄 **Feedforward Mechanism** 
+   - The successful Buddy's job result and self-reflection are passed to the next worker, creating a forward feedback loop until all jobs assigned to MiniBoss are completed.  
+8. 🔍 **Final Analysis (In Progress)** 
+   - Work is currently underway to develop the final analysis component of the system.
+
+
+## Notes from Asad K. (Mini-Boss Co-Creator)
+
+* 🌐 **A High-Level Management Layer**
+
+> Mini-Boss serves as an advanced management layer, acting as a centralized and focused agent overseeing AutoGPT's operations. It ensures all sub-tasks and sub-agents remain on track, producing results aligned with the overall goal. This 'mini-boss' plays a crucial role in managing AutoGPT's complexity, preventing any deviation from the main objective.
+
+* 🎯 **Improved Accuracy and Focus**
+
+> Mini-Boss enhances AutoGPT's output accuracy by providing higher-level oversight. The focused management layer guarantees each sub-task generated by the model is relevant and contributes to the end goal, resulting in more coherent and accurate responses from AutoGPT.
+
+* 🔍 **Result Analysis**
+
+> A key feature of Mini-Boss is its built-in result analysis capability. This tool enables Mini-Boss to assess each sub-agent's output, verifying the relevance and accuracy of their responses. By analyzing results, Mini-Boss adjusts sub-agents' direction, guiding them back on track if needed. This feature not only improves AutoGPT's output quality but also strengthens the model's self-awareness, enhancing its ability to self-correct and maintain focus.
+
+* 🧠 **A Layer of Self-Awareness**
+
+> One of Mini-Boss's most groundbreaking aspects is the added layer of self-awareness to AutoGPT. By evaluating sub-agents' output, Mini-Boss detects when the model strays from the task at hand. This self-awareness empowers the model to self-correct, refocusing efforts on the intended goal. It marks a significant step forward in developing more sophisticated and reliable AI models.
+
+
 
 
 ## Quickstart
@@ -59,10 +94,10 @@ Please see the [documentation][docs] for full setup instructions and configurati
   * [🧠 Auto-GPT](https://github.com/Significant-Gravitas/Auto-GPT)
 
 
-[docs]: https://github.com/MiniBossGPT/Mini-Boss/blob/main/docs/index.md
-[docs/setup]: https://github.com/MiniBossGPT/Mini-Boss/blob/main/docs/setup.md
-[docs/usage]: https://github.com/MiniBossGPT/Mini-Boss/blob/main/docs/usage.md
-[docs/plugins]: https://github.com/MiniBossGPT/Mini-Boss/blob/main/docs/plugins.md
+[docs]: https://github.com/MiniBossGPT/Mini-Boss/blob/master/docs/index.md
+[docs/setup]: https://github.com/MiniBossGPT/Mini-Boss/blob/master/docs/setup.md
+[docs/usage]: https://github.com/MiniBossGPT/Mini-Boss/blob/master/docs/usage.md
+[docs/plugins]: https://github.com/MiniBossGPT/Mini-Boss/blob/master/docs/plugins.md
 
 
 ## ⚠️ Limitations
@@ -72,6 +107,23 @@ This experiment aims to showcase the potential of management for autonomous Auto
 1. Not a polished application or product, just an experiment
 2. May not perform well in complex, real-world business scenarios. In fact, if it actually does, please share your results!
 3. Quite expensive to run, so set and monitor your API key limits with OpenAI!
+
+
+## 🌟 Meet the Creators and Acknowledgements
+
+**John H.** - Co-Creator
+
+Hi, I'm John H., and I am a Principal Software Architect and I've had the pleasure of co-creating the Mini-Boss project. I'm passionate about AI and constantly exploring new ways to push the boundaries of what's possible with this technology.
+
+**Asad K.** - Co-Creator
+
+A huge shoutout to my co-creator, Asad K., whose insights, dedication, and hard work have been invaluable in shaping Mini-Boss into the innovative project it is today.
+
+**Special Thanks to the Auto-GPT Team** - [Auto-GPT](https://github.com/Significant-Gravitas/Auto-GPT)
+
+We'd like to extend our deepest gratitude to the brilliant minds behind Auto-GPT. Their work has inspired and enabled the development of Mini-Boss, and we couldn't have done it without them. Thank you for your incredible contribution to the AI community!
+
+
 
 ## 🛡 Disclaimer
 
