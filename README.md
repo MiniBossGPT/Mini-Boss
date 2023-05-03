@@ -2,6 +2,11 @@
 [![GitHub Repo stars](https://img.shields.io/github/stars/MiniBossGPT/Mini-Boss?style=social)](https://github.com/MiniBossGPT/Mini-Boss/stargazers)
 [![Twitter Follow](https://img.shields.io/twitter/follow/minibossgpt?style=social)](https://twitter.com/MiniBossGPT)
 
+
+![MiniBossGPT](https://raw.githubusercontent.com/MiniBossGPT/Mini-Boss/main/DALE_2_MINI_BOSS.PNG)
+
+
+
 ## 💡 Get help - [Q&A](https://github.com/MiniBossGPT/Mini-Boss//discussions/categories/q-a)
 
 <hr/>
@@ -13,12 +18,12 @@ The `main` branch may often be in a **broken** state but is all we have right no
 <hr/>
 
 
-Mini-Boss is an experimental open-source application showcasing the capabilities of the GPT-4 language model and Auto-GPT (https://github.com/Significant-Gravitas/Auto-GPT). 
+Mini-Boss is an experimental open-source application showcasing the capabilities of the GPT-4 language model and Auto-GPT (https://github.com/MiniBossGPT/Mini-Boss). 
 This program, driven by Auto-GPT on top of GPT-4, chains together LLM "thoughts", to autonomously achieve whatever goal you set. As one of the first examples of GPT-4 running fully autonomously, Mini-Boss pushes the boundaries of what is possible with AI.
 
-<h2 align="center"> Demo April 16th 2023 </h2>
+<h2 align="center"> Demo March 3rd 2023 </h2>
 
-https://user-images.githubusercontent.com/70048414/232352935-55c6bf7c-3958-406e-8610-0913475a0b05.mp4
+[//]: # (https://user-images.githubusercontent.com/70048414/232352935-55c6bf7c-3958-406e-8610-0913475a0b05.mp4)
 
 Demo made by <a href=https://twitter.com/BlakeWerlinger>Blake Werlinger</a>
 
@@ -32,17 +37,17 @@ Your support is greatly appreciated. Development of this free, open-source proje
 
 ## 🚀 Features
 
-- 💾 Long-term and short-term memory management through a new mgmt system
-- 🧠 Auto-GPT instances for task completition
-- 🔗 All existing capabilities of Auto-GPT
+- 💾 Dynamic Long-term and short-term memory management through isolation and a feed forward mechanism for the workers
+- 🧠 All buddy workers for task completion are instances of Auto-GPT
+- 🔗 Therefore all existing and future capabilities of Auto-GPT are available to Mini-Boss
 
 
 ## Quickstart
 
 1. Get an OpenAI [API Key](https://platform.openai.com/account/api-keys)
 2. Download the [latest release](https://github.com/MiniBossGPT/Mini-Boss//releases/latest)
-3. Follow the Auto-GPT [installation instructions][docs/setup]
-4. Configure any additional features you want, or install some [plugins][docs/plugins]
+3. Follow the [installation instructions][docs/setup]
+4. Configure any additional features from Auto-GPT-Plugins if you want, or install some [plugins][docs/plugins]
 5. [Run][docs/usage] the app
 
 Please see the [documentation][docs] for full setup instructions and configuration options.
@@ -65,7 +70,7 @@ Please see the [documentation][docs] for full setup instructions and configurati
 
 ## ⚠️ Limitations
 
-This experiment aims to showcase the potential of management for autonomous agents utilizing GPT-4 but comes with some limitations:
+This experiment aims to showcase the potential of management for autonomous Auto-GPT agents utilizing GPT-4 but comes with some limitations:
 
 1. Not a polished application or product, just an experiment
 2. May not perform well in complex, real-world business scenarios. In fact, if it actually does, please share your results!
