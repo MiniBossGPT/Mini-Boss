@@ -1,0 +1,22 @@
+site_name: Mini-Boss
+repo_url: https://github.com/MiniBossGPT/Mini-Boss
+nav:
+  - Home: index.md
+  - Setup: setup.md
+  - Usage: usage.md
+  - Plugins: plugins.md
+  - Configuration:
+    - Memory: configuration/memory.md
+
+  - Contributing:
+    - Contribution guide: contributing.md
+    - Code of Conduct: code-of-conduct.md
+
+  - License: https://github.com/MiniBossGPT/Mini-Boss/blob/main/LICENSE
+
+theme: readthedocs
+
+markdown_extensions:
+  admonition:
+  codehilite:
+  pymdownx.keys:
