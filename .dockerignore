@@ -6,3 +6,4 @@
 *.md
 *.png
 !BULLETIN.md
+auto-gpt/.*

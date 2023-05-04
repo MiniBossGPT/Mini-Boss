@@ -6,7 +6,7 @@ on:
 
 env:
   BASE_BRANCH: master
-  IMAGE_NAME: auto-gpt
+  IMAGE_NAME: mini-boss
 
 jobs:
   build:
@@ -37,7 +37,7 @@ jobs:
 
         build_type: ${{ matrix.build-type }}
 
-        prod_branch: stable
+        prod_branch: master
         dev_branch: master
         repository: ${{ github.repository }}
         base_branch: ${{ github.ref_name != 'master' && github.ref_name != 'stable' && 'master' || 'stable' }}
