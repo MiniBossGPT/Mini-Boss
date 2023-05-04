@@ -165,3 +165,5 @@ openai/
 # news
 CURRENT_BULLETIN.md
 *_settings.yaml
+auto-gpt/*
+miniboss_workspace/*

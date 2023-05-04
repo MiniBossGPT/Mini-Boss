@@ -113,7 +113,7 @@ Get your OpenAI API key from: [https://platform.openai.com/account/api-keys](htt
     be hidden by default in some operating systems due to the dot prefix. To reveal
     hidden files, follow the instructions for your specific operating system:
     [Windows][show hidden files/Windows], [macOS][show hidden files/macOS].
-2. Either run `./env_setup.sh` or create a copy of `.env.template` and call it `.env`;
+2. Either run `./setup.sh` or create a copy of `.env.template` and call it `.env`;
     if you're already in a command prompt/terminal window: `cp auto-gpt/.env.template auto-gpt/.env`.
 3. Open the `.env` file in both the top level directoy and the sub directory in a text editor.
 4. Find the line that says `OPENAI_API_KEY=`.

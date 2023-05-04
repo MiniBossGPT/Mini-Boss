@@ -1,5 +1,5 @@
 #!/bin/bash
 
-git clone --recursive -b stable https://github.com/Significant-Gravitas/Auto-GPT
+git submodule update --init --recursive
 cp auto-gpt/.env.template auto-gpt/.env && cp auto-gpt/.env.template .env
 
