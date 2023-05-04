@@ -25,6 +25,7 @@ COPY auto-gpt/requirements.txt ./requirements.txt
 
 
 
+
 # Set the entrypoint
 ENTRYPOINT ["python", "-m", "miniboss"]
 #CMD ["/bin/bash"]
