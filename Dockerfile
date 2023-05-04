@@ -19,26 +19,30 @@ ENV PIP_NO_CACHE_DIR=yes \
 
 # Install the required python packages globally
 ENV PATH="$PATH:/root/.local/bin"
-COPY requirements.txt .
-COPY auto-gpt/requirements.txt ./requirements2.txt
+WORKDIR /app
+RUN git clone --recursive -b stable https://github.com/Significant-Gravitas/Auto-GPT
+COPY auto-gpt/requirements.txt ./requirements.txt
+
+
 
 # Set the entrypoint
 ENTRYPOINT ["python", "-m", "miniboss"]
+#CMD ["/bin/bash"]
 
 # dev build -> include everything
 FROM miniboss-base as miniboss-dev
-RUN pip install --no-cache-dir -r requirements.txt
-RUN pip install --no-cache-dir -r requirements2.txt
 WORKDIR /app
-ONBUILD COPY . ./
+COPY . .
+#ONBUILD COPY auto-gpt/autogpt/ ./autogpt
+RUN pip install --no-cache-dir -r ./auto-gpt/requirements.txt
+RUN pip install -e auto-gpt
+
 
 # release build -> include bare minimum
 FROM miniboss-base as miniboss-release
-RUN sed -i '/Items below this point will not be included in the Docker Image/,$d' requirements.txt && \
-	pip install --no-cache-dir -r requirements.txt &&\
-	pip install --no-cache-dir -r requirements2.txt
 WORKDIR /app
-ONBUILD COPY autogpt/ ./autogpt
-ONBUILD COPY miniboss/ ./miniboss
+COPY . .
+RUN sed -i '/Items below this point will not be included in the Docker Image/,$d' requirements.txt && \
+	pip install --no-cache-dir -r ./auto-gpt/requirements.txt
 
 FROM miniboss-${BUILD_TYPE} AS mini-boss

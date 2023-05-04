@@ -11,8 +11,8 @@ on:
         description: 'Build from scratch, without using cached layers'
 
 env:
-  IMAGE_NAME: auto-gpt
-  DEPLOY_IMAGE_NAME: ${{ secrets.DOCKER_USER }}/auto-gpt
+  IMAGE_NAME: mini-boss
+  DEPLOY_IMAGE_NAME: ${{ secrets.DOCKER_USER }}/mini-boss
 
 jobs:
   build:
