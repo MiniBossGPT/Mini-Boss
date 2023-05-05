@@ -1,23 +1,30 @@
+import json
+from concurrent.futures import ThreadPoolExecutor, as_completed
+from pathlib import Path
+
 from colorama import Fore, Style
 
-from miniboss.config import Config
+from miniboss.app import execute_boss_command, get_boss_command
 from miniboss.buddy.buddy import Buddy
+from miniboss.config import Config
 from miniboss.json_utils.json_fix_llm import fix_json_using_multiple_techniques
 from miniboss.json_utils.utilities import LLM_DEFAULT_RESPONSE_FORMAT, validate_json
 from miniboss.llm import chat_with_ai, create_chat_completion, create_chat_message
+from miniboss.llm.token_counter import count_string_tokens
 from miniboss.logs import logger, print_assistant_thoughts
+from miniboss.prompts.prompt import (
+    DEFAULT_BUDDY_TRIGGERING_PROMPT,
+    construct_main_buddy_config,
+)
+
 # from miniboss import say_text
 from miniboss.spinner import Spinner
 from miniboss.utils import clean_input, send_chat_message_to_user
 from miniboss.workspace import Jobspace
-from miniboss.prompts.prompt import DEFAULT_BUDDY_TRIGGERING_PROMPT, construct_main_buddy_config
-from pathlib import Path
-from miniboss.app import execute_boss_command, get_boss_command
-from concurrent.futures import ThreadPoolExecutor, as_completed
-
-import json
 
 cfg = Config()
+
+
 class Boss:
     """Boss class for interacting with Mini-Boss.
 
@@ -48,17 +55,17 @@ class Boss:
     """
 
     def __init__(
-            self,
-            ai_name,
-            memory,
-            full_message_history,
-            next_action_count,
-            command_registry,
-            config,
-            system_prompt,
-            triggering_prompt,
-            workspace_directory,
-            max_workers
+        self,
+        ai_name,
+        memory,
+        full_message_history,
+        next_action_count,
+        command_registry,
+        config,
+        system_prompt,
+        triggering_prompt,
+        workspace_directory,
+        max_workers,
     ):
         cfg = Config()
         self.ai_name = ai_name
@@ -292,9 +299,9 @@ class Boss:
             # Discontinue if continuous limit is reached
             loop_count += 1
             if (
-                    cfg.continuous_mode
-                    and cfg.continuous_limit > 0
-                    and loop_count > cfg.continuous_limit
+                cfg.continuous_mode
+                and cfg.continuous_limit > 0
+                and loop_count > cfg.continuous_limit
             ):
                 logger.typewriter_log(
                     "Continuous Limit Reached: ", Fore.YELLOW, f"{cfg.continuous_limit}"
@@ -314,24 +321,36 @@ class Boss:
                 buddy_action_count = 0
                 while not BUDDY_JOB_COMPLETE:
                     if buddy_workspace_directory is None:
-                        workspace_name = "miniboss_workspace/buddy_{}_workspace".format(i)
-                        buddy_workspace_directory = Path(__file__).parent.parent.parent / workspace_name
+                        workspace_name = "miniboss_workspace/buddy_{}_workspace".format(
+                            i
+                        )
+                        buddy_workspace_directory = (
+                            Path(__file__).parent.parent.parent / workspace_name
+                        )
                     else:
                         buddy_workspace_directory = Path(buddy_workspace_directory)
-                    workspace_directory = Jobspace.make_workspace(buddy_workspace_directory)
+                    workspace_directory = Jobspace.make_workspace(
+                        buddy_workspace_directory
+                    )
 
                     current_job = task
 
                     if i != 0:
                         previous_results = self.config.ai_task_results[i - 1]
                         updated_results = json.dumps(previous_results)
-                        prep_results = (updated_results.replace('{', '')
-                                        .replace('}', '')
-                                        .replace('[', '')
-                                        .replace(']', '')
-                                        .replace('\\', ''))
-                        previous_job = f"Please consider the previous job: {prep_results} "
-                        current_job = f"{previous_job} while completing your new job: {task}"
+                        prep_results = (
+                            updated_results.replace("{", "")
+                            .replace("}", "")
+                            .replace("[", "")
+                            .replace("]", "")
+                            .replace("\\", "")
+                        )
+                        previous_job = (
+                            f"Please consider the previous job: {prep_results} "
+                        )
+                        current_job = (
+                            f"{previous_job} while completing your new job: {task}"
+                        )
 
                     buddy = Buddy(
                         ai_name=buddy_name,
@@ -351,9 +370,9 @@ class Boss:
                     # print(buddy.final_result)
                     # Extract relevant information from final_result
                     # command = buddy.final_result['command']
-                    task = buddy.final_result['task']
-                    feedback = buddy.final_result['feedback']
-                    arguments = buddy.final_result['arguments']
+                    task = buddy.final_result["task"]
+                    feedback = buddy.final_result["feedback"]
+                    arguments = buddy.final_result["arguments"]
                     # Create a new dictionary with all values from final_result
                     new_final_result = buddy.final_result.copy()
                     # Display the summary
@@ -364,7 +383,7 @@ class Boss:
                     # Display the performance grade
                     # print(f"{buddy_name} Performance Grade: {performance_grade}")
                     # Add performance_grade to the new dictionary
-                    new_final_result['performance_grade'] = performance_grade
+                    new_final_result["performance_grade"] = performance_grade
                     # print("self.config.target_percentage", self.config.target_percentage)
                     # if performance_grade >= self.config.target_percentage:
                     #     logger.typewriter_log(f"\n{buddy_name} : SUCCESS ", Fore.GREEN,
@@ -375,19 +394,29 @@ class Boss:
 
                     if performance_grade >= self.config.target_percentage:
                         self.config.ai_task_results.append(new_final_result)
-                        logger.typewriter_log(f"\n{buddy_name} : SUCCESS ", Fore.GREEN, f"GRADE = {performance_grade} "
-                                                                                        f"TARGET = {self.config.target_percentage}\n")
+                        logger.typewriter_log(
+                            f"\n{buddy_name} : SUCCESS ",
+                            Fore.GREEN,
+                            f"GRADE = {performance_grade} "
+                            f"TARGET = {self.config.target_percentage}\n",
+                        )
                         BUDDY_JOB_COMPLETE = True
 
                         assistant_reply_json = {
-                            'thoughts': {'text': f'Task {i} : {task} has been completed by {buddy_name}.',
-                                         'reasoning': f'The worker completed the assigned task : {task} : with a performance grade of {performance_grade}.',
-                                         'plan': f'- We need to complete our remaining tasks.',
-                                         'criticism': f'We need to complete our remaining tasks in a timely manner',
-                                         'speak': f'I will report that Task {i} : {task} has been completed by {buddy_name}.'},
-                            'command': {'name': 'task_complete',
-                                        'args': {
-                                            'reason': f'The worker completed the assigned task : {task} : with a performance grade of {performance_grade}.'}}}
+                            "thoughts": {
+                                "text": f"Task {i} : {task} has been completed by {buddy_name}.",
+                                "reasoning": f"The worker completed the assigned task : {task} : with a performance grade of {performance_grade}.",
+                                "plan": f"- We need to complete our remaining tasks.",
+                                "criticism": f"We need to complete our remaining tasks in a timely manner",
+                                "speak": f"I will report that Task {i} : {task} has been completed by {buddy_name}.",
+                            },
+                            "command": {
+                                "name": "task_complete",
+                                "args": {
+                                    "reason": f"The worker completed the assigned task : {task} : with a performance grade of {performance_grade}."
+                                },
+                            },
+                        }
                         thoughts = assistant_reply_json.get("thoughts", {})
                         # print(assistant_reply_json)
                         self_feedback_resp = self.get_self_feedback(
@@ -403,17 +432,27 @@ class Boss:
                         else:
                             user_input = self_feedback_resp
                     else:
-                        logger.typewriter_log(f"\n{buddy_name} : FAILED ", Fore.RED, f"GRADE = {performance_grade} "
-                                                                                     f"TARGET = {self.config.target_percentage}\n")
+                        logger.typewriter_log(
+                            f"\n{buddy_name} : FAILED ",
+                            Fore.RED,
+                            f"GRADE = {performance_grade} "
+                            f"TARGET = {self.config.target_percentage}\n",
+                        )
                         assistant_reply_json = {
-                            'thoughts': {'text': f'Task {i} : {task} has failed to be completed by {buddy_name}.',
-                                         'reasoning': f'The worker failed to complete the assigned task : {task} : with a performance grade of {performance_grade}.',
-                                         'plan': f'- We need to launch a new worker to complete this task before proceeding to the next task.',
-                                         'criticism': f'Because the worker failed to meet the performance grade of {self.config.target_percentage} we need to launch a new worker to complete this task before proceeding to the next task.',
-                                         'speak': f'Task {i} : {task} has failed to be completed by {buddy_name}.'},
-                            'command': {'name': 'task_failed',
-                                        'args': {
-                                            'reason': f'The worker failed to complete the assigned task : {task} : with a performance grade of {performance_grade}.'}}}
+                            "thoughts": {
+                                "text": f"Task {i} : {task} has failed to be completed by {buddy_name}.",
+                                "reasoning": f"The worker failed to complete the assigned task : {task} : with a performance grade of {performance_grade}.",
+                                "plan": f"- We need to launch a new worker to complete this task before proceeding to the next task.",
+                                "criticism": f"Because the worker failed to meet the performance grade of {self.config.target_percentage} we need to launch a new worker to complete this task before proceeding to the next task.",
+                                "speak": f"Task {i} : {task} has failed to be completed by {buddy_name}.",
+                            },
+                            "command": {
+                                "name": "task_failed",
+                                "args": {
+                                    "reason": f"The worker failed to complete the assigned task : {task} : with a performance grade of {performance_grade}."
+                                },
+                            },
+                        }
                         thoughts = assistant_reply_json.get("thoughts", {})
                         # print(assistant_reply_json)
                         self_feedback_resp = self.get_self_feedback(
@@ -455,7 +494,7 @@ class Boss:
                 self.user_input = ""
                 send_chat_message_to_user(
                     "NEXT ACTION: \n " + f"COMMAND = {command_name} \n "
-                                         f"ARGUMENTS = {arguments}"
+                    f"ARGUMENTS = {arguments}"
                 )
                 logger.typewriter_log(
                     "NEXT ACTION: ",
@@ -538,7 +577,7 @@ class Boss:
                 # Print command
                 send_chat_message_to_user(
                     "NEXT ACTION: \n " + f"COMMAND = {command_name} \n "
-                                         f"ARGUMENTS = {arguments}"
+                    f"ARGUMENTS = {arguments}"
                 )
 
                 logger.typewriter_log(

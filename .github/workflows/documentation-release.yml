@@ -2,7 +2,7 @@ name: Docs
 
 on:
   push:
-    branches: [ master ]
+    branches: [ stable ]
     paths:
       - 'docs/**'
       - 'mkdocs.yml'
@@ -20,6 +20,8 @@ jobs:
     steps:
       - name: Checkout repository
         uses: actions/checkout@v3
+        with:
+          submodules: 'recursive'
 
       - name: Set up Python 3
         uses: actions/setup-python@v4

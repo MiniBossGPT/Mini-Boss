@@ -3,7 +3,7 @@
 Jobspace
 =========
 
-The workspace is a directory containing configuration and working files for an AutoGPT
+The workspace is a directory containing configuration and working files for an MiniBoss
 agent.
 
 """
@@ -15,7 +15,7 @@ from miniboss.logs import logger
 
 
 class Jobspace:
-    """A class that represents a workspace for an AutoGPT agent."""
+    """A class that represents a workspace for an MiniBoss agent."""
 
     NULL_BYTES = ["\0", "\000", "\x00", r"\z", "\u0000", "%00"]
 

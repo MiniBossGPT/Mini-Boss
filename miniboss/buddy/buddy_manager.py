@@ -4,9 +4,8 @@ from __future__ import annotations
 from typing import List
 
 from miniboss.config.config import Config
-from miniboss.llm import create_chat_completion
+from miniboss.llm import Message, create_chat_completion
 from miniboss.singleton import Singleton
-from miniboss.types.openai import Message
 
 
 class BuddyManager(metaclass=Singleton):

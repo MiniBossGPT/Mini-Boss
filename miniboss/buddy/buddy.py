@@ -1,30 +1,40 @@
+import os
+import subprocess
+
 from colorama import Fore, Style
 
-from miniboss.app import execute_command, get_command
+from miniboss.buddy_app import execute_buddy_command, get_buddy_command
 from miniboss.config import Config
 from miniboss.json_utils.json_fix_llm import fix_json_using_multiple_techniques
 from miniboss.json_utils.utilities import LLM_DEFAULT_RESPONSE_FORMAT, validate_json
-from miniboss.llm import chat_with_ai, buddy_chat_with_ai, create_chat_completion, create_chat_message
+from miniboss.llm import (
+    buddy_chat_with_ai,
+    chat_with_ai,
+    create_chat_completion,
+    create_chat_message,
+)
+from miniboss.llm.token_counter import count_string_tokens
 from miniboss.logs import logger, print_assistant_thoughts
+
 # from miniboss import say_text
 from miniboss.spinner import Spinner
 from miniboss.utils import clean_input, send_chat_message_to_user
 from miniboss.workspace import Jobspace
-import subprocess
-from autogpt.cli import main as autogpt_main
-import os
+
 """Execute code in a Docker container"""
+import ast
+import re
 import subprocess
 import sys
-import re
 from pathlib import Path
-import ast
+
 import docker
 from docker.errors import ImageNotFound
 
 from miniboss.config import Config
 
 CFG = Config()
+
 
 def we_are_running_in_a_docker_container() -> bool:
     """Check if we are running in a Docker container
@@ -36,7 +46,6 @@ def we_are_running_in_a_docker_container() -> bool:
 
 
 def execute_auto_gpt():
-
     # if we_are_running_in_a_docker_container():
     #     result = subprocess.run(
     #         f"python {filename}", capture_output=True, encoding="utf8", shell=True
@@ -63,9 +72,13 @@ def execute_auto_gpt():
                 elif status:
                     print(status)
 
-        env_file = '.env'
+        env_file = ".env"
         with open(env_file) as f:
-            env_vars = {line.strip().split('=')[0]: line.strip().split('=')[1] for line in f if line.strip()}
+            env_vars = {
+                line.strip().split("=")[0]: line.strip().split("=")[1]
+                for line in f
+                if line.strip()
+            }
 
         container = client.containers.run(
             image_name,
@@ -133,17 +146,17 @@ class Buddy:
     """
 
     def __init__(
-            self,
-            ai_name,
-            memory,
-            full_message_history,
-            next_action_count,
-            command_registry,
-            config,
-            system_prompt,
-            triggering_prompt,
-            current_job,
-            workspace_directory,
+        self,
+        ai_name,
+        memory,
+        full_message_history,
+        next_action_count,
+        command_registry,
+        config,
+        system_prompt,
+        triggering_prompt,
+        current_job,
+        workspace_directory,
     ):
         cfg = Config()
         self.ai_name = ai_name
@@ -170,9 +183,9 @@ class Buddy:
             # Discontinue if continuous limit is reached
             loop_count += 1
             if (
-                    cfg.continuous_mode
-                    and cfg.continuous_limit > 0
-                    and loop_count > cfg.continuous_limit
+                cfg.continuous_mode
+                and cfg.continuous_limit > 0
+                and loop_count > cfg.continuous_limit
             ):
                 # logger.typewriter_log(
                 #     "Continuous Limit Reached: ", Fore.YELLOW, f"{cfg.continuous_limit}"
@@ -196,7 +209,9 @@ class Buddy:
             # Job
             arguments_str = ""
             BUDDY_COMPLETE = False
-            logger.typewriter_log(f"{self.ai_name} Job:", Fore.GREEN, self.current_job, speak_text=False)
+            logger.typewriter_log(
+                f"{self.ai_name} Job:", Fore.GREEN, self.current_job, speak_text=False
+            )
             # logger.typewriter_log("Target Percentage:", Fore.GREEN, config.target_percentage, speak_text=False)
             # logger.typewriter_log("Tasks Complete:", Fore.GREEN, config.complete_percentage, speak_text=False)
             send_chat_message_to_user(f"{self.ai_name} Thinking... \n")
@@ -218,18 +233,31 @@ class Buddy:
                 # # todo: plug in all of the options here
                 # # command = ["python3", "-m", "autogpt", "--gpt3only", "--continuous", "-C", buddy_settings,"-m", "local"]
                 # # command = ["python3", "-m", "autogpt", "--gpt3only", "-C", buddy_settings,"-m", "local"]
-                command = ["python3", "-m", "autogpt", "-C", buddy_settings, "-m", "local"]
+                command = [
+                    "python3",
+                    "-m",
+                    "autogpt",
+                    "-C",
+                    buddy_settings,
+                    "-m",
+                    "local",
+                ]
 
                 #
                 # # working
-                process = subprocess.run(command, encoding='utf8', stdout=None, stderr=None, cwd=target_directory)
+                process = subprocess.run(
+                    command,
+                    encoding="utf8",
+                    stdout=None,
+                    stderr=None,
+                    cwd=target_directory,
+                )
 
                 # Check the return code to see if the command was successful
                 if process.returncode == 0:
                     print("Buddy completed work successfully.")
                 else:
                     print("Buddy work failed.")
-
 
                 ##############################################
                 # Define the log file path
@@ -252,9 +280,9 @@ class Buddy:
                         arguments = ast.literal_eval(arguments_str)
                         # Access the 'reason' value
 
-                        pre_reason = arguments['reason']
+                        pre_reason = arguments["reason"]
                         # Remove single and double quotes
-                        reason = pre_reason.strip('\'"').replace("'", "")
+                        reason = pre_reason.strip("'\"").replace("'", "")
                         # Print the 'reason' value
                         print(f"Task complete Reason: {reason}")
                         break
@@ -265,12 +293,15 @@ class Buddy:
                 # Convert the arguments string to a dictionary
 
                 assistant_reply_json = {
-                    'thoughts': {'text': 'My task is complete',
-                                 'reasoning': f'I completed the assigned task : {self.current_job}',
-                                 'plan': f'- Report to MiniBoss that the task is complete : {self.current_job} : with results {reason}',
-                                 'criticism': f'I need to make sure I report that I completed my task : {self.current_job}',
-                                 'speak': f'I will report that I completed my task : {self.current_job}.'},
-                    'command': {'name': 'task_complete', 'args': {'reason': reason}}}  # print("self.ai_name ", self.ai_name)
+                    "thoughts": {
+                        "text": "My task is complete",
+                        "reasoning": f"I completed the assigned task : {self.current_job}",
+                        "plan": f"- Report to MiniBoss that the task is complete : {self.current_job} : with results {reason}",
+                        "criticism": f"I need to make sure I report that I completed my task : {self.current_job}",
+                        "speak": f"I will report that I completed my task : {self.current_job}.",
+                    },
+                    "command": {"name": "task_complete", "args": {"reason": reason}},
+                }  # print("self.ai_name ", self.ai_name)
                 thoughts = assistant_reply_json.get("thoughts", {})
                 # print(assistant_reply_json)
                 self_feedback_resp = self.get_self_feedback(
@@ -301,7 +332,6 @@ class Buddy:
                 # print("\ntest_assistant_reply_json\n")
                 # print(test_assistant_reply_json)
 
-
             # Print Assistant thoughts
             if assistant_reply_json != {}:
                 validate_json(assistant_reply_json, LLM_DEFAULT_RESPONSE_FORMAT)
@@ -310,7 +340,7 @@ class Buddy:
                     print_assistant_thoughts(
                         self.ai_name, assistant_reply_json, cfg.speak_mode
                     )
-                    command_name, arguments = get_command(assistant_reply_json)
+                    command_name, arguments = get_buddy_command(assistant_reply_json)
                     # if cfg.speak_mode:
                     #     say_text(f"I want to execute {command_name}")
 
@@ -327,7 +357,7 @@ class Buddy:
                 self.user_input = ""
                 send_chat_message_to_user(
                     "NEXT ACTION: \n " + f"COMMAND = {command_name} \n "
-                                         f"ARGUMENTS = {arguments}"
+                    f"ARGUMENTS = {arguments}"
                 )
                 logger.typewriter_log(
                     "NEXT ACTION: ",
@@ -410,7 +440,7 @@ class Buddy:
                 # Print command
                 send_chat_message_to_user(
                     "NEXT ACTION: \n " + f"COMMAND = {command_name} \n "
-                                         f"ARGUMENTS = {arguments}"
+                    f"ARGUMENTS = {arguments}"
                 )
 
                 logger.typewriter_log(
@@ -438,7 +468,7 @@ class Buddy:
                 print("arguments", arguments)
 
                 #  todo: this will be key for completing the cycle here
-                command_result = execute_command(
+                command_result = execute_buddy_command(
                     self.command_registry,
                     command_name,
                     arguments,
@@ -464,7 +494,7 @@ class Buddy:
                         "command": command_name,
                         "arguments": reason,
                         "task": self.current_job,
-                        "feedback": self_feedback_resp or {}
+                        "feedback": self_feedback_resp or {},
                     }
                     break
             else:

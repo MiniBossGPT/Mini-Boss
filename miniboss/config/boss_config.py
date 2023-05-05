@@ -100,7 +100,16 @@ class BossConfig:
         target_percentage = config_params.get("target_percentage", 0.8)
         complete_percentage = config_params.get("complete_percentage", 0.0)
         # type: Type[BossConfig]
-        return BossConfig(ai_name, ai_role, ai_job, api_budget, ai_tasks, ai_task_results, target_percentage, complete_percentage)
+        return BossConfig(
+            ai_name,
+            ai_role,
+            ai_job,
+            api_budget,
+            ai_tasks,
+            ai_task_results,
+            target_percentage,
+            complete_percentage,
+        )
 
     def save(self, config_file: str = SAVE_FILE) -> None:
         """
