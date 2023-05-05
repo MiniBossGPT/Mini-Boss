@@ -1,0 +1,42 @@
+name: Update Submodule (Cron)
+
+on:
+  schedule:
+    - cron: '0 * * * *' # Every hour, you can adjust this according to your needs
+
+jobs:
+  update_submodule:
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v3
+      with:
+        submodules: 'recursive'
+
+    - name: Update submodule
+      run: |
+        cd auto-gpt
+        git fetch
+        git checkout stable
+        git pull
+
+    - name: Check for updates
+      id: check_updates
+      run: |
+        UPDATED=$(git status --porcelain)
+        if [ -z "$UPDATED" ]; then
+          echo "::set-output name=updated::false"
+        else
+          echo "::set-output name=updated::true"
+        fi
+      shell: bash
+
+    - name: Commit and push changes
+      if: steps.check_updates.outputs.updated == 'true'
+      run: |
+        git config --global user.name "MiniBossGPT"
+        git config --global user.email "minibossgpt@gmail.com"
+        git add auto-gpt
+        git commit -m "Update submodule to latest stable"
+        git push

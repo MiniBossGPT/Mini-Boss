@@ -4,6 +4,7 @@ from typing import List
 
 import openai
 import yaml
+
 # from auto_gpt_plugin_template import AutoGPTPluginTemplate
 from colorama import Fore
 
@@ -31,7 +32,9 @@ class Config(metaclass=Singleton):
         self.authorise_key = os.getenv("AUTHORISE_COMMAND_KEY", "y")
         self.exit_key = os.getenv("EXIT_KEY", "n")
         self.boss_settings_file = os.getenv("BOSS_SETTINGS_FILE", "boss_settings.yaml")
-        self.buddy_settings_file = os.getenv("BUDDY_SETTINGS_FILE", "buddy_settings.yaml")
+        self.buddy_settings_file = os.getenv(
+            "BUDDY_SETTINGS_FILE", "buddy_settings.yaml"
+        )
         self.fast_llm_model = os.getenv("FAST_LLM_MODEL", "gpt-3.5-turbo")
         self.smart_llm_model = os.getenv("SMART_LLM_MODEL", "gpt-4")
         self.fast_token_limit = int(os.getenv("FAST_TOKEN_LIMIT", 4000))
@@ -96,8 +99,6 @@ class Config(metaclass=Singleton):
         self.milvus_password = os.getenv("MILVUS_PASSWORD")
         self.milvus_collection = os.getenv("MILVUS_COLLECTION", "miniboss")
         self.milvus_secure = os.getenv("MILVUS_SECURE") == "True"
-
-
 
         # self.image_provider = os.getenv("IMAGE_PROVIDER")
         # self.image_size = int(os.getenv("IMAGE_SIZE", 256))

@@ -9,6 +9,7 @@ from logging import LogRecord
 from colorama import Fore, Style
 
 from miniboss.singleton import Singleton
+
 # from miniboss.speech import say_text
 
 
@@ -77,7 +78,7 @@ class Logger(metaclass=Singleton):
         self.speak_mode = False
 
     def typewriter_log(
-            self, title="", title_color="", content="", speak_text=False, level=logging.INFO
+        self, title="", title_color="", content="", speak_text=False, level=logging.INFO
     ):
         # if speak_text and self.speak_mode:
         #     say_text(f"{title}. {content}")
@@ -93,26 +94,26 @@ class Logger(metaclass=Singleton):
         )
 
     def debug(
-            self,
-            message,
-            title="",
-            title_color="",
+        self,
+        message,
+        title="",
+        title_color="",
     ):
         self._log(title, title_color, message, logging.DEBUG)
 
     def info(
-            self,
-            message,
-            title="",
-            title_color="",
+        self,
+        message,
+        title="",
+        title_color="",
     ):
         self._log(title, title_color, message, logging.INFO)
 
     def warn(
-            self,
-            message,
-            title="",
-            title_color="",
+        self,
+        message,
+        title="",
+        title_color="",
     ):
         self._log(title, title_color, message, logging.WARN)
 
@@ -120,11 +121,11 @@ class Logger(metaclass=Singleton):
         self._log(title, Fore.RED, message, logging.ERROR)
 
     def _log(
-            self,
-            title: str = "",
-            title_color: str = "",
-            message: str = "",
-            level=logging.INFO,
+        self,
+        title: str = "",
+        title_color: str = "",
+        message: str = "",
+        level=logging.INFO,
     ):
         if message:
             if isinstance(message, list):
@@ -194,10 +195,10 @@ class minibossFormatter(logging.Formatter):
     def format(self, record: LogRecord) -> str:
         if hasattr(record, "color"):
             record.title_color = (
-                    getattr(record, "color")
-                    + getattr(record, "title")
-                    + " "
-                    + Style.RESET_ALL
+                getattr(record, "color")
+                + getattr(record, "title")
+                + " "
+                + Style.RESET_ALL
             )
         else:
             record.title_color = getattr(record, "title")
@@ -218,9 +219,9 @@ logger = Logger()
 
 
 def print_assistant_thoughts(
-        ai_name: object,
-        assistant_reply_json_valid: object,
-        speak_mode: bool = False,
+    ai_name: object,
+    assistant_reply_json_valid: object,
+    speak_mode: bool = False,
 ) -> None:
     assistant_thoughts_reasoning = None
     assistant_thoughts_plan = None

@@ -10,3 +10,4 @@ exclude =
     .venv/*,
     reports/*,
     dist/*,
+    auto-gpt/*

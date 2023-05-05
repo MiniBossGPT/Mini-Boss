@@ -37,6 +37,7 @@ COPY . .
 #ONBUILD COPY auto-gpt/autogpt/ ./autogpt
 RUN pip install --no-cache-dir -r ./auto-gpt/requirements.txt
 RUN pip install -e auto-gpt
+RUN pip install rich
 
 
 # release build -> include bare minimum
@@ -44,6 +45,7 @@ FROM miniboss-base as miniboss-release
 WORKDIR /app
 COPY . .
 RUN sed -i '/Items below this point will not be included in the Docker Image/,$d' requirements.txt && \
-	pip install --no-cache-dir -r ./auto-gpt/requirements.txt
+	pip install --no-cache-dir -r ./auto-gpt/requirements.txt &&\
+    pip install rich
 
 FROM miniboss-${BUILD_TYPE} AS mini-boss

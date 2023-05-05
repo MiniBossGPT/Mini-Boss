@@ -5,8 +5,8 @@ from typing import List
 
 import tiktoken
 
+from miniboss.llm.base import Message
 from miniboss.logs import logger
-from miniboss.types.openai import Message
 
 
 def count_message_tokens(

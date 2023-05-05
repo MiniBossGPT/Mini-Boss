@@ -6,8 +6,7 @@ from miniboss.config.config import Config
 from miniboss.llm import ApiManager
 from miniboss.logs import logger
 from miniboss.prompts.generator import PromptGenerator
-
-from miniboss.setup import prompt_user, prompt_buddy
+from miniboss.setup import prompt_buddy, prompt_user
 from miniboss.utils import clean_input
 
 CFG = Config()
@@ -15,9 +14,7 @@ CFG = Config()
 DEFAULT_TRIGGERING_PROMPT = (
     "Determine which next command to use, and respond using the format specified above:"
 )
-DEFAULT_BUDDY_TRIGGERING_PROMPT = (
-    "Determine which next command to use to solve your given job, and respond using the format specified above:"
-)
+DEFAULT_BUDDY_TRIGGERING_PROMPT = "Determine which next command to use to solve your given job, and respond using the format specified above:"
 
 
 def build_default_prompt_generator() -> PromptGenerator:
@@ -101,10 +98,20 @@ def construct_main_boss_config() -> BossConfig:
             Fore.GREEN,
             "infinite" if config.api_budget <= 0 else f"${config.api_budget}",
         )
-        logger.typewriter_log("Target Percentage:", Fore.GREEN,
-                              "infinite" if config.target_percentage <= 0 else f"{config.target_percentage}")
-        logger.typewriter_log("Tasks Complete:", Fore.GREEN,
-                              "infinite" if config.complete_percentage <= 0 else f"{config.complete_percentage}")
+        logger.typewriter_log(
+            "Target Percentage:",
+            Fore.GREEN,
+            "infinite"
+            if config.target_percentage <= 0
+            else f"{config.target_percentage}",
+        )
+        logger.typewriter_log(
+            "Tasks Complete:",
+            Fore.GREEN,
+            "infinite"
+            if config.complete_percentage <= 0
+            else f"{config.complete_percentage}",
+        )
     elif config.ai_name:
         logger.typewriter_log(
             "Welcome back! ",

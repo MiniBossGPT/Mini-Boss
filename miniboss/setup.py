@@ -5,9 +5,9 @@ from colorama import Fore, Style
 
 from miniboss import utils
 from miniboss.config import Config
+from miniboss.config.autogpt_config import AutoGPTConfig
 from miniboss.config.boss_config import BossConfig
 from miniboss.config.buddy_config import BuddyConfig
-from miniboss.config.autogpt_config import AutoGPTConfig
 from miniboss.llm import create_chat_completion
 from miniboss.logs import logger
 
@@ -69,7 +69,7 @@ def prompt_user() -> BossConfig:
             return generate_aiconfig_manual()
 
 
-def prompt_buddy(user_desire = str) -> BuddyConfig:
+def prompt_buddy(user_desire=str) -> BuddyConfig:
     return generate_aiconfig_automatic_buddy_gpt(user_desire)
 
 
@@ -121,11 +121,11 @@ def generate_aiconfig_manual() -> BossConfig:
     logger.typewriter_log(
         "Enter the job for Mini-Boss: ",
         Fore.GREEN,
-        "For example: \nBuild a web page that says hello world"
+        "For example: \nBuild a web page that says hello world",
     )
     print("Enter nothing to load defaults, enter nothing when finished.", flush=True)
     ai_job = ""
-    ai_job = utils.clean_input(f"{Fore.LIGHTBLUE_EX}Goal{Style.RESET_ALL} {i+1}: ")
+    ai_job = utils.clean_input(f"{Fore.LIGHTBLUE_EX}Goal{Style.RESET_ALL} {i + 1}: ")
     if ai_job == "":
         ai_job = "Build a web page that says hello world"
 
@@ -134,19 +134,19 @@ def generate_aiconfig_manual() -> BossConfig:
         "Enter up to 5 tasks for your AI's job: ",
         "Enter the job for Mini-Boss: ",
         Fore.GREEN,
-        "For example: \nBuild a web page that says hello world"
+        "For example: \nBuild a web page that says hello world",
     )
     print("Enter nothing to load defaults, enter nothing when finished.", flush=True)
     ai_tasks = []
     for i in range(1):
-        ai_task = utils.clean_input(f"{Fore.LIGHTBLUE_EX}Goal{Style.RESET_ALL} {i+1}: ")
+        ai_task = utils.clean_input(
+            f"{Fore.LIGHTBLUE_EX}Goal{Style.RESET_ALL} {i + 1}: "
+        )
         if ai_task == "":
             break
         ai_tasks.append(ai_task)
     if not ai_tasks:
-        ai_tasks = [
-            "Build a web page that says hello world"
-        ]
+        ai_tasks = ["Build a web page that says hello world"]
 
     # Get API Budget from User
     logger.typewriter_log(
@@ -180,15 +180,15 @@ def generate_aiconfig_automatic(user_prompt) -> BossConfig:
     """
 
     system_prompt = """
-Your task is to act as the Project Manager and develop a working plan of up to few steps and an appropriate 
-role-based name (_GPT) for an autonomous worker agent, ensuring that the goals are optimally aligned with the 
-successful completion of its assigned task. The autonomous agent will perform the work in order to achieve 
-the desired plan, so you need to output very detailed steps that can be followed by the worker. The workers 
+Your task is to act as the Project Manager and develop a working plan of up to few steps and an appropriate
+role-based name (_GPT) for an autonomous worker agent, ensuring that the goals are optimally aligned with the
+successful completion of its assigned task. The autonomous agent will perform the work in order to achieve
+the desired plan, so you need to output very detailed steps that can be followed by the worker. The workers
 are not aware of the original plan, only the work they need to perform. Remember as a project manager, you will be able to
 assign each step of the plan to an independent worker. You want them to be effective and efficient in completing their goal. Therefore,
 ensure each step is actionable, produces a result, and includes time constraints.
 
-The user will provide the task, you will provide only the output in the exact format specified below in 
+The user will provide the task, you will provide only the output in the exact format specified below in
 example output with no explanation or conversation.
 
 Example input:

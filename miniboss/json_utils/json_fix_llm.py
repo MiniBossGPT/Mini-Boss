@@ -13,6 +13,7 @@ from miniboss.config import Config
 from miniboss.json_utils.json_fix_general import correct_json
 from miniboss.llm import call_ai_function
 from miniboss.logs import logger
+
 # from miniboss import say_text
 
 JSON_SCHEMA = """

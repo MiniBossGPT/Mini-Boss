@@ -1,9 +1,12 @@
 import os
+from pathlib import Path
 
 import requests
 import yaml
 from colorama import Fore
 from git.repo import Repo
+from rich import print
+from rich.markdown import Markdown
 
 # Use readline if available (for clean_input)
 try:
@@ -122,6 +125,25 @@ def get_latest_bulletin() -> str:
     current_bulletin = ""
     if exists:
         current_bulletin = open("CURRENT_BULLETIN.md", "r", encoding="utf-8").read()
+    new_bulletin = get_bulletin_from_web()
+    is_new_news = new_bulletin != current_bulletin
+
+    if new_bulletin and is_new_news:
+        open("CURRENT_BULLETIN.md", "w", encoding="utf-8").write(new_bulletin)
+        return f" {Fore.RED}::UPDATED:: {Fore.CYAN}{new_bulletin}{Fore.RESET}"
+    return current_bulletin
+
+
+def get_latest_markdown() -> str:
+    exists = os.path.exists("CURRENT_BULLETIN.md")
+    current_bulletin = ""
+    if exists:
+        markdown_file = Path("CURRENT_BULLETIN.md")
+        content = markdown_file.read_text()
+        current_bulletin = Markdown(content)
+        # print(current_bulletin)
+        # markdown_content = Markdown(content)
+        # current_bulletin = open("CURRENT_BULLETIN.md", "r", encoding="utf-8").read()
     new_bulletin = get_bulletin_from_web()
     is_new_news = new_bulletin != current_bulletin
 

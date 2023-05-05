@@ -97,11 +97,7 @@ class AutoGPTConfig:
             None
         """
 
-        config = {
-            "ai_name": self.name,
-            "ai_role": self.role,
-            "ai_goals": self.goals
-        }
+        config = {"ai_name": self.name, "ai_role": self.role, "ai_goals": self.goals}
         with open(config_file, "w", encoding="utf-8") as file:
             yaml.dump(config, file, allow_unicode=True)
 
@@ -134,7 +130,6 @@ class AutoGPTConfig:
         prompt_generator.goals = self.goals
         prompt_generator.name = self.name
         prompt_generator.role = self.role
-
 
         # Construct full prompt
         full_prompt = f"You are {prompt_generator.name}, {prompt_generator.role}\n{prompt_start}\n\nJob:\n\n"

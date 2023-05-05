@@ -4,7 +4,8 @@ import sys
 from pathlib import Path
 
 from colorama import Fore
-
+from rich import print
+from rich.markdown import Markdown
 
 from miniboss.boss.boss import Boss
 from miniboss.commands.command import CommandRegistry
@@ -13,9 +14,17 @@ from miniboss.configurator import create_config
 from miniboss.logs import logger
 from miniboss.memory import get_memory
 from miniboss.plugins import scan_plugins
-from miniboss.prompts.prompt import DEFAULT_TRIGGERING_PROMPT, construct_main_boss_config
-from miniboss.utils import get_current_git_branch, get_latest_bulletin
+from miniboss.prompts.prompt import (
+    DEFAULT_TRIGGERING_PROMPT,
+    construct_main_boss_config,
+)
+from miniboss.utils import (
+    get_current_git_branch,
+    get_latest_bulletin,
+    get_latest_markdown,
+)
 from miniboss.workspace import Jobspace
+
 
 def run_miniboss(
     continuous: bool,
@@ -58,9 +67,15 @@ def run_miniboss(
     )
 
     if not cfg.skip_news:
-        motd = get_latest_bulletin()
+        # motd = get_latest_bulletin()
+        motd = get_latest_markdown()
         if motd:
-            logger.typewriter_log("NEWS: ", Fore.GREEN, motd)
+            markdown_file = Path("CURRENT_BULLETIN.md")
+            content = markdown_file.read_text()
+            markdown_content = Markdown(content)
+            # logger.typewriter_log("", Fore.GREEN, markdown_content)
+            print(markdown_content)
+
         # git_branch = get_current_git_branch()
         # if git_branch and git_branch != "stable":
         #     logger.typewriter_log(
@@ -78,9 +93,6 @@ def run_miniboss(
                 "parts of Mini-Boss with this version. "
                 "Please consider upgrading to Python 3.10 or higher.",
             )
-
-    # if install_plugin_deps:
-    #     install_plugin_dependencies()
 
     # TODO: have this directory live outside the repository (e.g. in a user's
     #   home directory) and have it come in as a command line argument or part of
@@ -106,6 +118,7 @@ def run_miniboss(
     # Create a CommandRegistry instance and scan default folder
     command_registry = CommandRegistry()
     command_registry.import_commands("miniboss.app")
+    command_registry.import_commands("miniboss.buddy_app")
 
     ai_name = ""
     boss_config = construct_main_boss_config()
@@ -138,7 +151,6 @@ def run_miniboss(
         system_prompt=system_prompt,
         triggering_prompt=DEFAULT_TRIGGERING_PROMPT,
         workspace_directory=workspace_directory,
-        max_workers=1
+        max_workers=1,
     )
     boss.start_interaction_loop()
-
