@@ -2,7 +2,8 @@ name: Update Submodule (Cron)
 
 on:
   schedule:
-    - cron: '0 * * * *' # Every hour, you can adjust this according to your needs
+#    - cron: '0 * * * *' # Every hour, you can adjust this according to your needs
+    - cron: '* * * * *' # Every hour, you can adjust this according to your needs
 
 jobs:
   update_submodule:
