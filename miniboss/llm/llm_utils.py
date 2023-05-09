@@ -163,6 +163,10 @@ def create_chat_completion(
                     max_tokens=max_tokens,
                 )
             else:
+                print("model", model)
+                print("cfg.openai_api_key", cfg.openai_api_key)
+                print("messages", messages)
+                print("max_tokens", max_tokens)
                 response = api_manager.create_chat_completion(
                     model=model,
                     messages=messages,

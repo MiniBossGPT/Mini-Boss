@@ -7,3 +7,4 @@ read OPENAI_API_KEY
 
 echo "Running the Docker container..."
 docker run -it -e OPENAI_API_KEY="$OPENAI_API_KEY" minibossgpt/mini-boss:latest
+
