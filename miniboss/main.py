@@ -153,4 +153,5 @@ def run_miniboss(
         workspace_directory=workspace_directory,
         max_workers=1,
     )
+    boss.set_results_for_tasks()
     boss.start_interaction_loop()
