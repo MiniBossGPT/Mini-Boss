@@ -14,7 +14,7 @@ from miniboss.llm import (
     create_chat_message,
 )
 from miniboss.llm.token_counter import count_string_tokens
-from miniboss.logs import logger, print_assistant_thoughts
+from miniboss.logs import logger, print_buddy_thoughts
 
 # from miniboss import say_text
 from miniboss.spinner import Spinner
@@ -46,15 +46,6 @@ def we_are_running_in_a_docker_container() -> bool:
 
 
 def execute_auto_gpt():
-    # if we_are_running_in_a_docker_container():
-    #     result = subprocess.run(
-    #         f"python {filename}", capture_output=True, encoding="utf8", shell=True
-    #     )
-    #     if result.returncode == 0:
-    #         return result.stdout
-    #     else:
-    #         return f"Error: {result.stderr}"
-
     try:
         client = docker.from_env()
         image_name = "significantgravitas/auto-gpt:latest"
@@ -100,20 +91,40 @@ def execute_auto_gpt():
         container.wait()
         logs = container.logs().decode("utf-8")
         container.remove()
-
-        # print(f"Execution complete. Output: {output}")
-        # print(f"Logs: {logs}")
-
         return logs
-
-    except docker.errors.DockerException as e:
-        print(
-            "Could not run the script in a container. If you haven't already, please install Docker https://docs.docker.com/get-docker/"
-        )
-        return f"Error: {str(e)}"
 
     except Exception as e:
         return f"Error: {str(e)}"
+
+
+def parse_auto_gpt_logs(target_directory):
+    # Define the log file path
+    log_file_path = os.path.join(target_directory, "logs/activity.log")
+    # Read the log file in reverse
+    with open(log_file_path, "r", encoding="utf-8") as log_file:
+        lines = log_file.readlines()
+        lines.reverse()
+    # Define a regular expression pattern to match the "task_complete" command and its arguments
+    pattern = r"COMMAND = task_complete\s+ARGUMENTS = ({.*})"
+    # Search for the pattern in the reversed log content
+    reason = ""
+    for line in lines:
+        match = re.search(pattern, line)
+        if match:
+            arguments_str = match.group(1)
+            # Parse the string to a Python dictionary
+            arguments = ast.literal_eval(arguments_str)
+            # Access the 'reason' value
+            pre_reason = arguments["reason"]
+            # Remove single and double quotes
+            reason = pre_reason.strip("'\"").replace("'", "")
+            # Print the 'reason' value
+            # print(f"Task complete Reason: {reason}")
+            return reason
+    else:
+        # make this an error
+        # print("Task complete command not found in the log file.")
+        return reason
 
 
 class Buddy:
@@ -187,45 +198,35 @@ class Buddy:
                 and cfg.continuous_limit > 0
                 and loop_count > cfg.continuous_limit
             ):
-                # logger.typewriter_log(
-                #     "Continuous Limit Reached: ", Fore.YELLOW, f"{cfg.continuous_limit}"
-                # )
-                # send_chat_message_to_user(
-                #     f"Continuous Limit Reached: \n {cfg.continuous_limit}"
-                # )
+                logger.typewriter_log(
+                    "Continuous Limit Reached: ", Fore.YELLOW, f"{cfg.continuous_limit}"
+                )
+                send_chat_message_to_user(
+                    f"Continuous Limit Reached: \n {cfg.continuous_limit}"
+                )
                 break
                 # Agent Created, print message
-            logger.typewriter_log(
-                self.ai_name,
-                Fore.LIGHTBLUE_EX,
-                "currently working!",
-                speak_text=True,
-            )
-            # Print the ai config details
-            # Name
-            # logger.typewriter_log(f"{self.ai_name}:", Fore.GREEN, self.ai_name, speak_text=False)
-            # Role
-            # logger.typewriter_log("Role:", Fore.GREEN, config.ai_role, speak_text=False)
-            # Job
+
             arguments_str = ""
             BUDDY_COMPLETE = False
-            logger.typewriter_log(
-                f"{self.ai_name} Job:", Fore.GREEN, self.current_job, speak_text=False
-            )
-            # logger.typewriter_log("Target Percentage:", Fore.GREEN, config.target_percentage, speak_text=False)
-            # logger.typewriter_log("Tasks Complete:", Fore.GREEN, config.complete_percentage, speak_text=False)
+            # logger.typewriter_log(
+            #     f"{self.ai_name} Job:", Fore.GREEN, self.current_job, speak_text=False
+            # )
+
             send_chat_message_to_user(f"{self.ai_name} Thinking... \n")
             # Send message to AI, get response
             # with Spinner(f"{self.ai_name} Thinking... "):
             while not BUDDY_COMPLETE:
-                # todo: if the buddy is running its own job it should work?
-
-                # Your main program code here
-
-                # Run another Python program in parallel and capture its output
                 # # Set the target directory
-                target_directory = f"{os.getcwd()}/auto-gpt"
 
+                from rich.markdown import Markdown
+
+                markdown_text = (
+                    f"# 🚀 {self.ai_name} : {self.config.ai_name} : Launching Auto-GPT 🚀"
+                )
+                logger.log_markdown(markdown_text)
+
+                target_directory = f"{os.getcwd()}/auto-gpt"
                 ##############################################
                 ### Disable this block to test
                 ##############################################
@@ -243,8 +244,9 @@ class Buddy:
                     "local",
                 ]
 
-                #
-                # # working
+                ##############################################
+                # to test completetion loop disable this block
+                # Launch Auto-GPT
                 process = subprocess.run(
                     command,
                     encoding="utf8",
@@ -252,94 +254,39 @@ class Buddy:
                     stderr=None,
                     cwd=target_directory,
                 )
-
                 # Check the return code to see if the command was successful
-                if process.returncode == 0:
-                    print("Buddy completed work successfully.")
-                else:
-                    print("Buddy work failed.")
+                # if process.returncode == 0:
+                #     print("Buddy completed work successfully.")
+                # else:
+                #     print("Buddy work failed.")
 
+                reason = parse_auto_gpt_logs(target_directory)
                 ##############################################
-                # Define the log file path
-                log_file_path = os.path.join(target_directory, "logs/activity.log")
-
-                # Read the log file in reverse
-                with open(log_file_path, "r", encoding="utf-8") as log_file:
-                    lines = log_file.readlines()
-                    lines.reverse()
-
-                # Define a regular expression pattern to match the "task_complete" command and its arguments
-                pattern = r"COMMAND = task_complete\s+ARGUMENTS = ({.*})"
-
-                # Search for the pattern in the reversed log content
-                for line in lines:
-                    match = re.search(pattern, line)
-                    if match:
-                        arguments_str = match.group(1)
-                        # Parse the string to a Python dictionary
-                        arguments = ast.literal_eval(arguments_str)
-                        # Access the 'reason' value
-
-                        pre_reason = arguments["reason"]
-                        # Remove single and double quotes
-                        reason = pre_reason.strip("'\"").replace("'", "")
-                        # Print the 'reason' value
-                        print(f"Task complete Reason: {reason}")
-                        break
-                else:
-                    print("Task complete command not found in the log file.")
-                    break
+                # reason = "Buddy completed work successfully."
+                ##############################################
 
                 # Convert the arguments string to a dictionary
+                # the Buddy - Auto-GPT instance only completes when task is completed
+                # todo: move this to prompts
+                self_feedback_resp, assistant_reply_json = self.complete_buddy_task(
+                    reason, cfg
+                )
 
-                assistant_reply_json = {
-                    "thoughts": {
-                        "text": "My task is complete",
-                        "reasoning": f"I completed the assigned task : {self.current_job}",
-                        "plan": f"- Report to MiniBoss that the task is complete : {self.current_job} : with results {reason}",
-                        "criticism": f"I need to make sure I report that I completed my task : {self.current_job}",
-                        "speak": f"I will report that I completed my task : {self.current_job}.",
-                    },
-                    "command": {"name": "task_complete", "args": {"reason": reason}},
-                }  # print("self.ai_name ", self.ai_name)
-                thoughts = assistant_reply_json.get("thoughts", {})
-                # print(assistant_reply_json)
-                self_feedback_resp = self.get_self_feedback(
-                    thoughts, cfg.fast_llm_model
-                )
-                logger.typewriter_log(
-                    f"BUDDY FEEDBACK: {self_feedback_resp}",
-                    Fore.YELLOW,
-                    "",
-                )
                 if self_feedback_resp[0].lower().strip() == cfg.authorise_key:
                     user_input = "GENERATE NEXT COMMAND JSON"
                 else:
                     user_input = self_feedback_resp
-                BUDDY_COMPLETE = True
-                # print(result)
 
-                # this is a local buddy - this worked - possible different app
-                # test_assistant_reply = buddy_chat_with_ai(
-                #     self,
-                #     self.system_prompt,
-                #     f"{self.triggering_prompt} The job you need to solve as quickly as possible and in as few steps as possible is: {self.current_job}. Remember it is your job to make decisions quickly to be an efficient worker.",
-                #     self.full_message_history,
-                #     self.memory,
-                #     cfg.fast_token_limit,
-                # )  # TODO: This hardcodes the model to use GPT3.5. Make this an argument
-                # test_assistant_reply_json = fix_json_using_multiple_techniques(test_assistant_reply)
-                # print("\ntest_assistant_reply_json\n")
-                # print(test_assistant_reply_json)
+                BUDDY_COMPLETE = True
 
             # Print Assistant thoughts
             if assistant_reply_json != {}:
                 validate_json(assistant_reply_json, LLM_DEFAULT_RESPONSE_FORMAT)
                 # Get command name and arguments
                 try:
-                    print_assistant_thoughts(
-                        self.ai_name, assistant_reply_json, cfg.speak_mode
-                    )
+                    # print_buddy_thoughts(
+                    #     self.ai_name, assistant_reply_json, cfg.speak_mode
+                    # )
                     command_name, arguments = get_buddy_command(assistant_reply_json)
                     # if cfg.speak_mode:
                     #     say_text(f"I want to execute {command_name}")
@@ -365,6 +312,8 @@ class Buddy:
                     f"COMMAND = {Fore.CYAN}{command_name}{Style.RESET_ALL}  "
                     f"ARGUMENTS = {Fore.CYAN}{arguments}{Style.RESET_ALL}",
                 )
+                # todo: later, automate this step when a buddy is complete
+                # console_input = "y"
                 print(
                     f"{self.ai_name}..."
                     "Enter 'y' to authorise command, 'y -N' to run N continuous commands, 's' to run self-feedback commands"
@@ -426,13 +375,13 @@ class Buddy:
                         command_name = "human_feedback"
                         break
 
-                if user_input == "GENERATE NEXT COMMAND JSON":
-                    logger.typewriter_log(
-                        "-=-=-=-=-=-=-= COMMAND AUTHORISED BY USER -=-=-=-=-=-=-=",
-                        Fore.MAGENTA,
-                        "",
-                    )
-                elif user_input == "EXIT":
+                # if user_input == "GENERATE NEXT COMMAND JSON":
+                # logger.typewriter_log(
+                #     "-=-=-=-=-=-=-= COMMAND AUTHORISED BY USER -=-=-=-=-=-=-=",
+                #     Fore.MAGENTA,
+                #     "",
+                # )
+                if user_input == "EXIT":
                     send_chat_message_to_user("Exiting...")
                     print("Exiting...", flush=True)
                     break
@@ -464,10 +413,6 @@ class Buddy:
                     command_name, arguments = plugin.pre_command(
                         command_name, arguments
                     )
-                print("command_name", command_name)
-                print("arguments", arguments)
-
-                #  todo: this will be key for completing the cycle here
                 command_result = execute_buddy_command(
                     self.command_registry,
                     command_name,
@@ -484,11 +429,10 @@ class Buddy:
                 if self.next_action_count > 0:
                     self.next_action_count -= 1
 
-            # Check if there's a result from the command append it to the message
-            # history
             if result is not None:
                 self.full_message_history.append(create_chat_message("system", result))
-                logger.typewriter_log("SYSTEM: ", Fore.YELLOW, result)
+                # logger.typewriter_log("SYSTEM: ", Fore.YELLOW, result)
+                logger.typewriter_log("", Fore.GREEN, "\n")
                 if command_name == "task_complete":
                     self.final_result = {
                         "command": command_name,
@@ -529,7 +473,7 @@ class Buddy:
             str: A feedback response generated using the provided thoughts dictionary.
         """
         ai_role = self.current_job
-        print("ai_role", ai_role)
+        # print("ai_role", ai_role)
         feedback_prompt = f"Below is a message from an AI buddy with the role of {ai_role}. Please review the provided Thought, Reasoning, Plan, and Criticism. If these elements accurately contribute to the successful execution of the assumed role, respond with the letter 'Y' followed by a space, and then explain why it is effective. If the provided information is not suitable for achieving the role's objectives, please provide one or more sentences addressing the issue and suggesting a resolution."
         reasoning = thoughts.get("reasoning", "")
         plan = thoughts.get("plan", "")
@@ -540,3 +484,34 @@ class Buddy:
             [{"role": "user", "content": feedback_prompt + feedback_thoughts}],
             llm_model,
         )
+
+    def complete_buddy_task(self, reason, cfg):
+        assistant_reply_json = {
+            "thoughts": {
+                "text": "My task is complete",
+                "reasoning": f"I completed the assigned task : {self.current_job}",
+                "plan": f"Report to MiniBoss that I have completed the job : {self.current_job} : with the following results {reason}",
+                "criticism": f"I need to make sure I report that I completed my task : {self.current_job}",
+                "speak": f"I will report that I completed my task : {self.current_job}.",
+            },
+            "command": {"name": "task_complete", "args": {"reason": reason}},
+        }  # print("self.ai_name ", self.ai_name)
+        thoughts = assistant_reply_json.get("thoughts", {})
+        # print(assistant_reply_json)
+        self_feedback_resp = self.get_self_feedback(thoughts, cfg.fast_llm_model)
+        # logger.typewriter_log(
+        #     f"BUDDY FEEDBACK: {self_feedback_resp}",
+        #     Fore.YELLOW,
+        #     "",
+        # )
+        markdown_text = (
+            f"# 🚀 {self.ai_name} : {self.config.ai_name} : Auto-GPT Task Complete 🚀"
+        )
+        logger.log_markdown(markdown_text)
+        display_feedback = self_feedback_resp.replace(
+            "Y ",
+            "I have completed my task, and I have concluded based on my results that, ",
+        )
+        markdown_text = f"``` {display_feedback}```"
+        logger.log_markdown(markdown_text)
+        return display_feedback, assistant_reply_json

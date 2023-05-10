@@ -26,7 +26,7 @@ class BuddyConfig:
         ai_name (str): The name of the AI.
         ai_role (str): The description of the AI's role.
         ai_job (str): The objective the AI is supposed to complete.
-        ai_tasks (list): The list of objectives the AI is supposed to complete.
+        ai_goals (list): The list of objectives the AI is supposed to complete.
         api_budget (float): The maximum dollar value for API calls (0.0 means infinite)
     """
 
@@ -34,9 +34,11 @@ class BuddyConfig:
         self,
         ai_name: str = "",
         ai_role: str = "",
-        ai_job: str = "",
         api_budget: float = 0.0,
-        ai_tasks: list | None = None,
+        ai_goals: list | None = None,
+        name: str = "",
+        current_job: str = "",
+        target_percentage: float = 0.0,
     ) -> None:
         """
         Initialize a class instance
@@ -45,25 +47,27 @@ class BuddyConfig:
             ai_name (str): The name of the AI.
             ai_role (str): The description of the AI's role.
             ai_job (list): The list of objectives the AI is supposed to complete.
-            ai_tasks (list): The list of objectives the AI is supposed to complete.
+            ai_goals (list): The list of objectives the AI is supposed to complete.
             api_budget (float): The maximum dollar value for API calls (0.0 means infinite)
         Returns:
             None
         """
-        if ai_tasks is None:
-            ai_tasks = []
+        if ai_goals is None:
+            ai_goals = []
         self.ai_name = ai_name
         self.ai_role = ai_role
-        self.ai_job = ai_job
-        self.ai_tasks = ai_tasks
+        self.ai_goals = ai_goals
+        self.name = name
+        self.current_job = current_job
         self.api_budget = api_budget
+        self.target_percentage = target_percentage
         self.prompt_generator = None
         self.command_registry = None
 
     @staticmethod
     def load(config_file: str = SAVE_FILE) -> "BuddyConfig":
         """
-        Returns class object with parameters (ai_name, ai_role, ai_job, ai_tasks, api_budget) loaded from
+        Returns class object with parameters (ai_name, ai_role, ai_job, ai_goals, api_budget) loaded from
           yaml file if yaml file exists,
         else returns class with no parameters.
 
@@ -83,11 +87,14 @@ class BuddyConfig:
 
         ai_name = config_params.get("ai_name", "")
         ai_role = config_params.get("ai_role", "")
-        ai_tasks = config_params.get("ai_tasks", [])
-        ai_job = config_params.get("ai_job", "")
+        current_job = config_params.get("current_job", "")
+        name = config_params.get("name", "")
+        ai_goals = config_params.get("ai_goals", [])
         api_budget = config_params.get("api_budget", 0.0)
-        # type: Type[BuddyConfig]
-        return BuddyConfig(ai_name, ai_role, ai_job, api_budget, ai_tasks)
+        target_percentage = config_params.get("target_percentage", 0.0)
+        return BuddyConfig(
+            ai_name, ai_role, api_budget, ai_goals, name, current_job, target_percentage
+        )
 
     def save(self, config_file: str = SAVE_FILE) -> None:
         """
@@ -104,9 +111,11 @@ class BuddyConfig:
         config = {
             "ai_name": self.ai_name,
             "ai_role": self.ai_role,
-            "ai_job": self.ai_job,
-            "ai_tasks": self.ai_tasks,
+            "ai_goals": self.ai_goals,
             "api_budget": self.api_budget,
+            "name": self.name,
+            "current_job": self.current_job,
+            "target_percentage": self.target_percentage,
         }
         with open(config_file, "w", encoding="utf-8") as file:
             yaml.dump(config, file, allow_unicode=True)
@@ -122,7 +131,7 @@ class BuddyConfig:
 
         Returns:
             full_prompt (str): A string containing the initial prompt for the user
-              including the ai_name, ai_role, ai_job, ai_tasks, and api_budget.
+              including the ai_name, ai_role, ai_job, ai_goals, and api_budget.
         """
 
         prompt_start = (
@@ -137,8 +146,7 @@ class BuddyConfig:
         cfg = Config()
         if prompt_generator is None:
             prompt_generator = build_default_prompt_generator()
-        prompt_generator.job = self.ai_job
-        prompt_generator.tasks = self.ai_tasks
+        prompt_generator.tasks = self.ai_goals
         prompt_generator.name = self.ai_name
         prompt_generator.role = self.ai_role
         prompt_generator.command_registry = self.command_registry
@@ -160,8 +168,8 @@ class BuddyConfig:
 
         # Construct full prompt
         full_prompt = f"You are {prompt_generator.name}, {prompt_generator.role}\n{prompt_start}\n\nJob:\n\n"
-        full_prompt += f"{self.ai_job}\n"
-        for i, task in enumerate(self.ai_tasks):
+        full_prompt += f"{self.ai_role}\n"
+        for i, task in enumerate(self.ai_goals):
             full_prompt += f"{i+1}. {task}\n"
         if self.api_budget > 0.0:
             full_prompt += f"\nIt takes money to let you run. Your API budget is ${self.api_budget:.3f}"

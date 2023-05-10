@@ -8,6 +8,8 @@ from git.repo import Repo
 from rich import print
 from rich.markdown import Markdown
 
+from miniboss.logs import logger
+
 # Use readline if available (for clean_input)
 try:
     import readline
@@ -61,12 +63,16 @@ def clean_input(prompt: str = "", talk=False):
                 return plugin_response
 
         # ask for input, default when just pressing Enter is y
-        print("Asking user via keyboard...")
+        logger.typewriter_log("", Fore.GREEN, "\n")
+        logger.typewriter_log("Asking user via keyboard...", Fore.YELLOW, "")
+        logger.typewriter_log("", Fore.GREEN, "\n")
         answer = input(prompt)
         return answer
     except KeyboardInterrupt:
-        print("You interrupted Mini-Boss")
-        print("Quitting...")
+        logger.typewriter_log("", Fore.GREEN, "\n")
+        logger.typewriter_log("You interrupted Mini-Boss...", Fore.RED, "\n")
+        logger.typewriter_log("", Fore.GREEN, "\n")
+        logger.typewriter_log("Quitting...", Fore.RED, "\n")
         exit(0)
 
 

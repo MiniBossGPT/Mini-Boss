@@ -7,10 +7,13 @@ import time
 from logging import LogRecord
 
 from colorama import Fore, Style
-
-from miniboss.singleton import Singleton
+from rich.console import Console
+from rich.markdown import Markdown
 
 # from miniboss.speech import say_text
+from rich.table import Table
+
+from miniboss.singleton import Singleton
 
 
 class Logger(metaclass=Singleton):
@@ -92,6 +95,92 @@ class Logger(metaclass=Singleton):
         self.typing_logger.log(
             level, content, extra={"title": title, "color": title_color}
         )
+
+    def log_mini_boss_setup(self, config):
+        console = Console()
+        logger.typewriter_log("", Fore.GREEN, "\n")
+        # Role:  {config.ai_role}
+        logger.typewriter_log("Name :", Fore.CYAN, config.ai_name)
+        # logger.typewriter_log("Role :", Fore.GREEN, config.ai_role)
+        logger.typewriter_log("Job:", Fore.CYAN, f"{config.ai_job}")
+        logger.typewriter_log("", Fore.GREEN, "\n")
+        target_percentage = str(config.target_percentage * 100) + "%"
+        complete_percentage = str(config.complete_percentage * 100) + "%"
+        api_budget = "unlimited" if config.api_budget <= 0 else f"${config.api_budget}"
+        logger.typewriter_log("Complete:", Fore.YELLOW, f"{str(complete_percentage)}")
+        logger.typewriter_log("Budget:", Fore.YELLOW, api_budget)
+        logger.typewriter_log("", Fore.GREEN, "\n")
+        table = Table(show_header=True, header_style="bold cyan")
+        table.add_column("#", style="white", width=4)
+        table.add_column("Task", style="white", width=12)
+        table.add_column("Status", style="cyan", width=8)
+        table.add_column("Score", style="cyan", width=8)
+        table.add_column("Target", style="cyan", width=8)
+        table.add_column("Workers", style="cyan", width=8)
+        table.add_column("Description")
+        # print(config.ai_task_results)
+        # Add tasks to
+        for i, task in enumerate(config.ai_tasks):
+            task_parts = task.split(": ", 1)  # split on the first occurrence of ': '
+            if len(task_parts) == 2:
+                if len(config.ai_task_results):
+                    task_results = config.ai_task_results[i]
+                    status = task_results["status"]
+                    score = task_results["score"]
+                    worker_count = task_results["worker_count"]
+                else:
+                    status = "-"
+                    score = 0
+                    worker_count = 0
+                # Set border style for rows
+                row_style = "dim white"
+                display_count = i + 1
+                task_title, task_description = task_parts
+                table.add_row(
+                    str(display_count),
+                    task_title,
+                    str(status),
+                    str(score),
+                    target_percentage,
+                    str(worker_count),
+                    task_description,
+                )
+                table.add_row("", "", "", "", "", "", style=row_style)
+            else:
+                logger.typewriter_log(
+                    "Error", Fore.RED, f"Could not parse task: {task}", speak_text=False
+                )
+
+        console.print(table)
+
+    def log_buddy_setup(self, config):
+        console = Console()
+        logger.typewriter_log("", Fore.GREEN, "\n")
+        # Role:  {config.ai_role}
+        markdown_text = f"# 🚀 {config.name} : {config.ai_name} 🚀"
+        logger.log_markdown(markdown_text)
+        markdown_text = f"``` Job: {config.current_job} ```"
+        logger.log_markdown(markdown_text)
+        logger.typewriter_log("", Fore.GREEN, "\n")
+        logger.typewriter_log("", Fore.GREEN, "\n")
+        table = Table(show_header=True, header_style="bold yellow")
+        table.add_column("#", style="white", width=4)
+        table.add_column("Buddy Objectives for Auto-GPT")
+
+        # Add tasks to
+        for i, task in enumerate(config.ai_goals):
+            row_style = "dim white"
+            display_count = i + 1
+            table.add_row(str(display_count), task)
+            table.add_row("", "", style=row_style)
+
+        console.print(table)
+
+    def log_markdown(self, message):
+        console = Console()
+        md = Markdown(message)
+        console.print(md)
+        logger.typewriter_log("", Fore.GREEN, "\n")
 
     def debug(
         self,
@@ -219,6 +308,46 @@ logger = Logger()
 
 
 def print_assistant_thoughts(
+    ai_name: object,
+    assistant_reply_json_valid: object,
+    speak_mode: bool = False,
+) -> None:
+    assistant_thoughts_reasoning = None
+    assistant_thoughts_plan = None
+    assistant_thoughts_speak = None
+    assistant_thoughts_criticism = None
+
+    assistant_thoughts = assistant_reply_json_valid.get("thoughts", {})
+    assistant_thoughts_text = assistant_thoughts.get("text")
+    if assistant_thoughts:
+        assistant_thoughts_reasoning = assistant_thoughts.get("reasoning")
+        assistant_thoughts_plan = assistant_thoughts.get("plan")
+        assistant_thoughts_criticism = assistant_thoughts.get("criticism")
+        assistant_thoughts_speak = assistant_thoughts.get("speak")
+    logger.typewriter_log(
+        f"{ai_name.upper()} THOUGHTS:", Fore.YELLOW, f"{assistant_thoughts_text}"
+    )
+    logger.typewriter_log("REASONING:", Fore.YELLOW, f"{assistant_thoughts_reasoning}")
+    if assistant_thoughts_plan:
+        logger.typewriter_log("PLAN:", Fore.YELLOW, "")
+        # If it's a list, join it into a string
+        if isinstance(assistant_thoughts_plan, list):
+            assistant_thoughts_plan = "\n".join(assistant_thoughts_plan)
+        elif isinstance(assistant_thoughts_plan, dict):
+            assistant_thoughts_plan = str(assistant_thoughts_plan)
+
+        # Split the input_string using the newline character and dashes
+        lines = assistant_thoughts_plan.split("\n")
+        for line in lines:
+            line = line.lstrip("- ")
+            logger.typewriter_log("- ", Fore.GREEN, line.strip())
+    logger.typewriter_log("CRITICISM:", Fore.YELLOW, f"{assistant_thoughts_criticism}")
+    # # Speak the assistant's thoughts
+    # if speak_mode and assistant_thoughts_speak:
+    #     say_text(assistant_thoughts_speak)
+
+
+def print_buddy_thoughts(
     ai_name: object,
     assistant_reply_json_valid: object,
     speak_mode: bool = False,

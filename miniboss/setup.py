@@ -20,57 +20,28 @@ def prompt_user() -> BossConfig:
     Returns:
         BossConfig: The BossConfig object tailored to the user's input
     """
-    ai_name = ""
-    boss_config = None
-
-    # Construct the prompt
-    logger.typewriter_log(
-        "Welcome to Mini-Boss! ",
-        Fore.GREEN,
-        "run with '--help' for more information.",
-        speak_text=True,
-    )
-
-    # Get user desire
-    logger.typewriter_log(
-        "Create an Mini-Boss:",
-        Fore.GREEN,
-        "input '--manual' to enter manual mode.",
-        speak_text=True,
-    )
-
     user_desire = utils.clean_input(
         f"{Fore.LIGHTBLUE_EX}I want Mini-Boss to{Style.RESET_ALL}: "
     )
 
     if user_desire == "":
-        user_desire = "Write a wikipedia style article about the project: https://github.com/significant-gravitas/Auto-GPT"  # Default prompt
+        user_desire = "Write a wikipedia style article about the project: https://github.com/MiniBossGPT/Mini-Boss"  # Default prompt
 
-    # If user desire contains "--manual"
-    if "--manual" in user_desire:
+    try:
+        return generate_aiconfig_automatic(user_desire)
+    except Exception as e:
         logger.typewriter_log(
-            "Manual Mode Selected",
-            Fore.GREEN,
-            speak_text=True,
+            "Unable to automatically generate AI Config based on user desire.",
+            Fore.RED,
+            "Falling back to manual mode.",
+            speak_text=False,
         )
+
         return generate_aiconfig_manual()
 
-    else:
-        try:
-            return generate_aiconfig_automatic(user_desire)
-        except Exception as e:
-            logger.typewriter_log(
-                "Unable to automatically generate AI Config based on user desire.",
-                Fore.RED,
-                "Falling back to manual mode.",
-                speak_text=True,
-            )
 
-            return generate_aiconfig_manual()
-
-
-def prompt_buddy(user_desire=str) -> BuddyConfig:
-    return generate_aiconfig_automatic_buddy_gpt(user_desire)
+def prompt_buddy(user_desire=str, target_percentage=float, name=str) -> BuddyConfig:
+    return generate_aiconfig_automatic_buddy_gpt(user_desire, target_percentage, name)
 
 
 def generate_aiconfig_manual() -> BossConfig:
@@ -91,30 +62,21 @@ def generate_aiconfig_manual() -> BossConfig:
         Fore.GREEN,
         "Enter the name of your AI Mini-Boss and its role below. Entering nothing will load"
         " defaults.",
-        speak_text=True,
+        speak_text=False,
     )
 
     # Get AI Name from User
     logger.typewriter_log(
-        "Name your Mini-Boss: ", Fore.GREEN, "For example, 'Conductor-Mini-Boss'"
+        "Name your Mini-Boss: ", Fore.GREEN, "For example, 'BossBoss'"
     )
     ai_name = utils.clean_input("Mini-Boss Name: ")
     if ai_name == "":
         ai_name = "Conductor-Mini-Boss"
 
     logger.typewriter_log(
-        f"{ai_name} here!", Fore.LIGHTBLUE_EX, "I am at your service.", speak_text=True
+        f"{ai_name} here!", Fore.LIGHTBLUE_EX, "I am at your service.", speak_text=False
     )
 
-    # # Get AI Role from User
-    # logger.typewriter_log(
-    #     "Describe your AI Mini-Boss's role: ",
-    #     Fore.GREEN,
-    #     "For example, 'an AI designed to autonomously deploy buddy's to achieve the desired goal"
-    # )
-    # ai_role = utils.clean_input(f"{ai_name} is: ")
-    # if ai_role == "":
-    #     ai_role = "an AI designed to autonomously deploy buddy's to achieve the desired goal"
     ai_role = "you are an AI designed to autonomously deploy worker agent buddy's to professionally solve the desired goal of the user"
 
     # Enter up to 5 goals for the AI
@@ -124,29 +86,28 @@ def generate_aiconfig_manual() -> BossConfig:
         "For example: \nBuild a web page that says hello world",
     )
     print("Enter nothing to load defaults, enter nothing when finished.", flush=True)
-    ai_job = ""
-    ai_job = utils.clean_input(f"{Fore.LIGHTBLUE_EX}Goal{Style.RESET_ALL} {i + 1}: ")
+    ai_job = utils.clean_input(f"{Fore.LIGHTBLUE_EX}Job{Style.RESET_ALL}: ")
     if ai_job == "":
         ai_job = "Build a web page that says hello world"
 
     # Enter up to 5 goals for the AI
     logger.typewriter_log(
-        "Enter up to 5 tasks for your AI's job: ",
+        "Enter up to 3 individual tasks to solve the main job: ",
         "Enter the job for Mini-Boss: ",
         Fore.GREEN,
-        "For example: \nBuild a web page that says hello world",
+        "For example: \nwrite an html file that says hello world",
     )
     print("Enter nothing to load defaults, enter nothing when finished.", flush=True)
     ai_tasks = []
-    for i in range(1):
+    for i in range(3):
         ai_task = utils.clean_input(
             f"{Fore.LIGHTBLUE_EX}Goal{Style.RESET_ALL} {i + 1}: "
         )
         if ai_task == "":
             break
-        ai_tasks.append(ai_task)
+        ai_tasks.append(f"Worker {i} : {ai_task}")
     if not ai_tasks:
-        ai_tasks = ["Build a web page that says hello world"]
+        ai_tasks = ["Worker 1: write an html file that says hello world"]
 
     # Get API Budget from User
     logger.typewriter_log(
@@ -180,28 +141,20 @@ def generate_aiconfig_automatic(user_prompt) -> BossConfig:
     """
 
     system_prompt = """
-Your task is to act as the Project Manager and develop a working plan of up to few steps and an appropriate
-role-based name (_GPT) for an autonomous worker agent, ensuring that the goals are optimally aligned with the
-successful completion of its assigned task. The autonomous agent will perform the work in order to achieve
-the desired plan, so you need to output very detailed steps that can be followed by the worker. The workers
-are not aware of the original plan, only the work they need to perform. Remember as a project manager, you will be able to
-assign each step of the plan to an independent worker. You want them to be effective and efficient in completing their goal. Therefore,
-ensure each step is actionable, produces a result, and includes time constraints.
+Your task is to act as the Boss and develop a working plan with a few steps and an appropriate role-based name (_MiniBoss) for an autonomous worker MiniBoss, ensuring the goals are aligned optimally with the successful completion of its assigned task. The autonomous agent will perform the work according to the desired plan, so you need to provide very detailed steps that can be followed by the worker. The workers are not aware of the original plan, only the work they need to perform. As a project manager, you will be able to assign each step of the plan to an independent worker. You aim for them to be effective and efficient in completing their goal. Therefore, ensure each step is actionable, produces a result, and includes time constraints.
 
-The user will provide the task, you will provide only the output in the exact format specified below in
-example output with no explanation or conversation.
+The user will provide the task, and you will provide the output in the exact format specified in the example output below, with no explanation or conversation.
 
 Example input:
-Create a web page that says "Welcome to our website!"
+Find the weather information for Blue Ridge, GA for today.
 
 Example output:
 
-Name: WeatherReporter
-Description: A working plan to efficiently search Google and write a summary on the weather for Blue Ridge, GA for today contains the following actionable steps
+Name: WeatherBot-MiniBoss
+Description: A working plan to efficiently find and summarize the weather information for Blue Ridge, GA for today.
 Jobs:
-- Research Assistant: Find the weather information for Blue Ridge, GA for today by searching "Blue Ridge, GA weather today" on Google and provide the temperature, precipitation, and any other relevant information quickly and efficiently
-- Content Writer: Receive the researched weather information from the Research Assistant, and promptly write a brief summary of the weather for Blue Ridge, GA for today, including the temperature, precipitation, and any other relevant information, ensuring it is clear and concise
-
+- DataCollector: Utilize search capabilities to gather data on the current weather for Blue Ridge, GA, including temperature, precipitation, and any other relevant information.
+- SummaryWriter: Take the data obtained by the DataCollector and create a brief, clear, and concise summary of the current weather in Blue Ridge, GA, including temperature, precipitation, and other relevant information.
 
 """
 
@@ -244,7 +197,9 @@ Jobs:
 
 
 # todo: this is for the auto-=gpt task
-def generate_aiconfig_automatic_buddy_gpt(user_prompt) -> AutoGPTConfig:
+def generate_aiconfig_automatic_buddy_gpt(
+    user_prompt, target_percentage, name
+) -> BuddyConfig:
     """Generates an BossConfig object from the given string.
 
     Returns:
@@ -252,20 +207,20 @@ def generate_aiconfig_automatic_buddy_gpt(user_prompt) -> AutoGPTConfig:
     """
 
     system_prompt = """
-Your task is to act as the worker and to develop up to 2 goals to solve your job along with an appropriate role-based name (_GPT) for an autonomous worker agent, ensuring that the goals are optimally aligned with the successful completion of your assigned task. You, as the autonomous agent, will perform the work in order to achieve the desired plan, so you need to be very fast and efficient. Try not to write or suggest code in your response unless specifically tasked with the job of producing code.
 
-The user will provide the task, you will provide only the output in the exact format specified below in example output with no explanation or conversation.
+Your task is to be an efficient automated AI worker. Develop 1 to 2 goals to solve your job, along with an appropriate role-based name (WeatherBot-Buddy) for an autonomous worker agent, ensuring that the goals are optimally aligned with the successful completion of your assigned task. You, as the autonomous agent, will perform the work to achieve the desired plan, so you need to be very quick and efficient. Avoid writing or suggesting code in your response unless specifically tasked with the job of producing code.
+
+The WeatherBot-MiniBoss will provide the job you are supposed to complete. You, as the worker, will provide only the output in the exact format specified below in example output with no explanation or conversation.
 
 Example input:
-Design a basic layout for the web page, including header, body, and footer
+Utilize search capabilities to gather data on the current weather for Blue Ridge, GA, including temperature, precipitation, and any other relevant information.
 
 Example output:
-Name: WebBuilderWorker
-Role: I need to generate an html file with the requested layout for the web page, including header, body, and footer efficiently and quickly
+Name: WeatherBot-Buddy
+Role: I am tasked to rapidly collect accurate weather data for Blue Ridge, GA, including temperature, precipitation, and any other relevant information.
 Goals:
-- Create a new file for the code and modify the file to append the requested content, including header, body, and footer, prioritizing the most important actions
-- Once completed, promptly report that I have finished my task and deliver the completed html file
-
+- Access the required data source quickly, extract the necessary weather data for Blue Ridge, GA, including temperature, precipitation, and any other relevant details.
+- Once the data is gathered, promptly complete your task after ensuring you have saved the collected weather information.
 """
 
     # Call LLM with the string as user input
@@ -303,4 +258,6 @@ Goals:
     ai_tasks = re.findall(r"(?<=\n)-\s*(.*)", output)
     api_budget = 0.0  # TODO: parse api budget using a regular expression
 
-    return AutoGPTConfig(ai_name, ai_role, ai_tasks)
+    return BuddyConfig(
+        ai_name, ai_role, api_budget, ai_tasks, name, user_prompt, target_percentage
+    )

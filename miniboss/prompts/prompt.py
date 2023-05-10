@@ -87,144 +87,94 @@ def construct_main_boss_config() -> BossConfig:
     Returns:
         str: The prompt string
     """
+
     config = BossConfig.load(CFG.boss_settings_file)
     if CFG.skip_reprompt and config.ai_name:
-        logger.typewriter_log("Name :", Fore.GREEN, config.ai_name)
-        # logger.typewriter_log("Role :", Fore.GREEN, config.ai_role)
-        logger.typewriter_log("Job:", Fore.GREEN, f"{config.ai_job}")
-        logger.typewriter_log("Tasks:", Fore.GREEN, f"{config.ai_tasks}")
-        logger.typewriter_log(
-            "API Budget:",
-            Fore.GREEN,
-            "infinite" if config.api_budget <= 0 else f"${config.api_budget}",
-        )
-        logger.typewriter_log(
-            "Target Percentage:",
-            Fore.GREEN,
-            "infinite"
-            if config.target_percentage <= 0
-            else f"{config.target_percentage}",
-        )
-        logger.typewriter_log(
-            "Tasks Complete:",
-            Fore.GREEN,
-            "infinite"
-            if config.complete_percentage <= 0
-            else f"{config.complete_percentage}",
-        )
+        logger.log_mini_boss_setup(config)
     elif config.ai_name:
+        logger.typewriter_log("", Fore.GREEN, "\n")
+        logger.typewriter_log("Welcome back! \n", Fore.GREEN, "")
+        logger.typewriter_log("", Fore.GREEN, "\n")
         logger.typewriter_log(
-            "Welcome back! ",
+            "",
             Fore.GREEN,
-            f"Would you like me to return to being {config.ai_name}?",
-            speak_text=True,
+            f"Would you like me to return to being {config.ai_name}? \n\n",
         )
-        # Role:  {config.ai_role}
+        logger.log_mini_boss_setup(config)
+
         should_continue = clean_input(
             f"""Continue with the last settings?
-Name:  {config.ai_name}
-Job: {config.ai_job}
-Tasks: {config.ai_tasks}
-Target Percentage: {"infinite" if config.target_percentage <= 0 else f"{config.target_percentage}"}
-Tasks Complete: {"infinite" if config.complete_percentage <= 0 else f"{config.complete_percentage}"}
-API Budget: {"infinite" if config.api_budget <= 0 else f"${config.api_budget}"}
 Continue ({CFG.authorise_key}/{CFG.exit_key}): """
         )
+
+        # reset the config if the user did not want to continue last settings
         if should_continue.lower() == CFG.exit_key:
             config = BossConfig()
-
-    if not config.ai_name:
-        config = prompt_user()
-        config.save(CFG.boss_settings_file)
 
     # set the total api budget
     api_manager = ApiManager()
     api_manager.set_total_budget(config.api_budget)
 
-    # Agent Created, print message
-    logger.typewriter_log(
-        config.ai_name,
-        Fore.LIGHTBLUE_EX,
-        "has been created with the following details:",
-        speak_text=True,
-    )
-    # Print the ai config details
-    # Name
-    logger.typewriter_log("Name:", Fore.GREEN, config.ai_name, speak_text=False)
-    # Role
-    # logger.typewriter_log("Role:", Fore.GREEN, config.ai_role, speak_text=False)
-    # Job
-    logger.typewriter_log("Job:", Fore.GREEN, config.ai_job, speak_text=False)
-    # Tasks
-    logger.typewriter_log("Tasks:", Fore.GREEN, "", speak_text=False)
-    for task in config.ai_tasks:
-        logger.typewriter_log("-", Fore.GREEN, task, speak_text=False)
-    # todo: numbers break here
-    # logger.typewriter_log("Target Percentage:", Fore.GREEN, config.target_percentage, speak_text=False)
-    # logger.typewriter_log("Tasks Complete:", Fore.GREEN, config.complete_percentage, speak_text=False)
+    # if no existing config
+    if not config.ai_name:
+        config = prompt_user()
+        config.save(CFG.boss_settings_file)
+        # Agent Created, print message
+        logger.typewriter_log(
+            config.ai_name,
+            Fore.LIGHTBLUE_EX,
+            "has been created with the following details:",
+            speak_text=False,
+        )
+        logger.log_mini_boss_setup(config)
 
     return config
 
 
-# todo: this should never prompt the user
-def construct_main_buddy_config(task) -> BuddyConfig:
+def construct_main_buddy_config(task, target_percentage, name) -> BuddyConfig:
     """Construct the prompt for the AI to respond to
 
     Returns:
         str: The prompt string
     """
     config = BuddyConfig.load(CFG.buddy_settings_file)
+    if CFG.skip_reprompt and config.ai_name:
+        logger.log_buddy_setup(config)
+    elif config.ai_name:
+        logger.typewriter_log("", Fore.GREEN, "\n")
+        logger.typewriter_log(
+            "",
+            Fore.GREEN,
+            f"Would you like me to return to being {config.ai_name}? \n\n",
+        )
+        logger.log_buddy_setup(config)
 
-    #     if CFG.skip_reprompt and config.ai_name:
-    #
-    #         logger.typewriter_log("Name :", Fore.GREEN, config.ai_name)
-    #         # logger.typewriter_log("Role :", Fore.GREEN, config.ai_role)
-    #         logger.typewriter_log("Job:", Fore.GREEN, f"{config.ai_job}")
-    #         logger.typewriter_log("Tasks:", Fore.GREEN, f"{config.ai_tasks}")
-    #         logger.typewriter_log(
-    #             "API Budget:",
-    #             Fore.GREEN,
-    #             "infinite" if config.api_budget <= 0 else f"${config.api_budget}",
-    #         )
-    #     elif config.ai_name:
-    #         logger.typewriter_log(
-    #             "Welcome back! ",
-    #             Fore.GREEN,
-    #             f"Would you like me to return to being {config.ai_name}?",
-    #             speak_text=True,
-    #         )
-    #         # Role:  {config.ai_role}
-    #         should_continue = clean_input(
-    #             f"""Continue with the last settings?
-    # Name:  {config.ai_name}
-    # Job: {config.ai_job}
-    # API Budget: {"infinite" if config.api_budget <= 0 else f"${config.api_budget}"}
-    # Continue ({CFG.authorise_key}/{CFG.exit_key}): """
-    #         )
-    #         if should_continue.lower() == CFG.exit_key:
-    #             config = BuddyConfig()
+        should_continue = clean_input(
+            f"""Continue with the last settings?
+Continue ({CFG.authorise_key}/{CFG.exit_key}): """
+        )
 
-    config = prompt_buddy(task)
+        # reset the config if the user did not want to continue last settings
+        if should_continue.lower() == CFG.exit_key:
+            config = BuddyConfig()
+
+    # if no existing config
+    if not config.ai_name:
+        config = prompt_buddy(task, target_percentage, name)
+        config.save(CFG.buddy_settings_file)
+        logger.log_buddy_setup(config)
+
+    return config
+
+
+def create_main_buddy_config(task, target_percentage, name) -> BuddyConfig:
+    """Construct the prompt for the AI to respond to
+
+    Returns:
+        str: The prompt string
+    """
+    config = prompt_buddy(task, target_percentage, name)
     config.save(CFG.buddy_settings_file)
-    # set the total api budget
-    api_manager = ApiManager()
-    api_manager.set_total_budget(config.api_budget)
-
-    # # Agent Created, print message
-    # logger.typewriter_log(
-    #     config.ai_name,
-    #     Fore.LIGHTBLUE_EX,
-    #     "has been created with the following details:",
-    #     speak_text=True,
-    # )
-    # Print the ai config details
-    # Name
-    # logger.typewriter_log("Buddy:", Fore.GREEN, config.ai_name, speak_text=False)
-    # # Role
-    # logger.typewriter_log("Role:", Fore.GREEN, config.ai_role, speak_text=False)
-    # # Job
-    # logger.typewriter_log("Job:", Fore.GREEN, config.ai_job, speak_text=False)
-    # logger.typewriter_log("Target Percentage:", Fore.GREEN, config.target_percentage, speak_text=False)
-    # logger.typewriter_log("Tasks Complete:", Fore.GREEN, config.complete_percentage, speak_text=False)
+    logger.log_buddy_setup(config)
 
     return config
