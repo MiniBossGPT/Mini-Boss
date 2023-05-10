@@ -277,7 +277,7 @@ class Boss:
                             f"GRADE = {performance_grade} "
                             f"TARGET = {self.config.target_percentage}\n",
                         )
-                        self.config.ai_task_results[i]["status"] = "completed"
+                        self.config.ai_task_results[i]["status"] = "complete"
                         # print(self.config.ai_task_results[i]["status"])
                         self.config.save(CFG.boss_settings_file)
 
@@ -297,7 +297,7 @@ class Boss:
                             },
                         }
                         thoughts = assistant_reply_json.get("thoughts", {})
-                        print(assistant_reply_json)
+                        # print(assistant_reply_json)
                         self_feedback_resp = self.get_self_feedback_on_buddy(
                             thoughts, cfg.fast_llm_model
                         )
@@ -323,7 +323,7 @@ class Boss:
                             f"GRADE = {performance_grade} "
                             f"TARGET = {self.config.target_percentage}\n",
                         )
-                        self.config.ai_task_results[i]["status"] = "failed"
+                        self.config.ai_task_results[i]["status"] = "fail"
                         # print(self.config.ai_task_results[i]["status"])
                         self.config.save(CFG.boss_settings_file)
                         assistant_reply_json = {
