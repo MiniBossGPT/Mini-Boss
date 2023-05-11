@@ -14,6 +14,14 @@
 
 
 Mini-Boss is an innovative open-source project that harnesses the power of the GPT-4 language model and Auto-GPT (https://github.com/Significant-Gravitas/Auto-GPT). Leveraging Auto-GPT on the foundation of GPT-4, this application seamlessly connects LLM "thoughts" to autonomously accomplish any objective you define. As an early example of fully autonomous GPT-4 implementation, Mini-Boss is redefining the frontiers of AI capabilities.
+<h2 align="center"> Demo March 11rd 2023 </h2>
+
+
+<p align="center">
+  <img src="https://raw.githubusercontent.com/MiniBossGPT/Mini-Boss/master/console_example_3.png" width="90%" height="90%">
+</p>
+
+
 <h2 align="center"> Demo March 5rd 2023 </h2>
 
 
