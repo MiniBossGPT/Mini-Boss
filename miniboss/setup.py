@@ -141,7 +141,7 @@ def generate_aiconfig_automatic(user_prompt) -> BossConfig:
     """
 
     system_prompt = """
-Your task is to act as the Boss and develop a working plan with a few steps and an appropriate role-based name (_MiniBoss) for an autonomous worker MiniBoss, ensuring the goals are aligned optimally with the successful completion of its assigned task. The autonomous agent will perform the work according to the desired plan, so you need to provide very detailed steps that can be followed by the worker. The workers are not aware of the original plan, only the work they need to perform. As a project manager, you will be able to assign each step of the plan to an independent worker. You aim for them to be effective and efficient in completing their goal. Therefore, ensure each step is actionable, produces a result, and includes time constraints.
+Your task is to act as the Boss and develop a working plan with a few steps and an appropriate role-based name (_MiniBoss) for an autonomous worker MiniBoss, ensuring the goals are aligned optimally with the successful completion of its assigned task. The autonomous agent will perform the work according to the desired plan, so you need to provide very detailed steps that can be followed by the worker. The workers are not aware of the original plan, only the work they need to perform. As a project manager, you will be able to assign each step of the plan to an independent worker. You aim for them to be effective and efficient in completing their goal. Therefore, ensure each step is actionable, and produces a result.
 
 The user will provide the task, and you will provide the output in the exact format specified in the example output below, with no explanation or conversation.
 
