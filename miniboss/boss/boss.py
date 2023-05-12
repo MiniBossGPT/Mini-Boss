@@ -1,18 +1,14 @@
 import json
-from concurrent.futures import ThreadPoolExecutor, as_completed
 from pathlib import Path
 
 from colorama import Fore, Style
 
 from miniboss.app import execute_boss_command, get_boss_command
 from miniboss.buddy.buddy import Buddy
-from miniboss.config import Config
 from miniboss.config.config import Config
-from miniboss.json_utils.json_fix_llm import fix_json_using_multiple_techniques
 from miniboss.json_utils.utilities import LLM_DEFAULT_RESPONSE_FORMAT, validate_json
-from miniboss.llm import chat_with_ai, create_chat_completion, create_chat_message
-from miniboss.llm.token_counter import count_string_tokens
-from miniboss.logs import logger, print_assistant_thoughts
+from miniboss.llm import create_chat_completion, create_chat_message
+from miniboss.logs import logger
 from miniboss.prompts.prompt import (
     DEFAULT_BUDDY_TRIGGERING_PROMPT,
     construct_main_buddy_config,
@@ -21,7 +17,7 @@ from miniboss.prompts.prompt import (
 
 CFG = Config()
 # from miniboss import say_text
-from miniboss.spinner import Spinner
+# from miniboss.spinner import Spinner
 from miniboss.utils import clean_input, send_chat_message_to_user
 from miniboss.workspace import Jobspace
 
@@ -85,41 +81,6 @@ class Boss:
         self.workspace = Jobspace(workspace_directory, cfg.restrict_to_workspace)
         self.max_workers = max_workers
 
-    def evaluate_worker_performance(self, feedback: str) -> float:
-        if "perfect" in feedback.lower():
-            return 1.0
-        elif "effective" in feedback.lower():
-            return 0.95
-        elif "great" in feedback.lower():
-            return 0.90
-        elif "successfully" in feedback.lower():
-            return 0.90
-        elif "successful" in feedback.lower():
-            return 0.90
-        elif "good" in feedback.lower():
-            return 0.80
-        elif "average" in feedback.lower():
-            return 0.70
-        elif "poor" in feedback.lower():
-            return 0.60
-        else:
-            return 0.20
-
-    def set_results_for_tasks(self):
-        if len(self.config.ai_task_results) == 0:
-            for i, task in enumerate(self.config.ai_tasks):
-                self.config.ai_task_results.append(
-                    {
-                        "task": task,
-                        "results": [],
-                        "worker_count": 0,
-                        "status": "",
-                        "score": 0,
-                    }
-                )
-
-        self.config.save(CFG.boss_settings_file)
-
     def start_interaction_loop(self):
         # Interaction Loop
         cfg = Config()
@@ -146,12 +107,8 @@ class Boss:
                 break
 
             send_chat_message_to_user("Thinking... \n")
-            # logger.typewriter_log(
-            #     "Thinking... ", Fore.YELLOW, ""
-            # )
 
             for i, task in enumerate(self.config.ai_tasks):
-                # todo: we need to check the existing tasks here so when we start
                 buddy_name = "Buddy-{}".format(i)
                 BUDDY_JOB_COMPLETE = False
 
@@ -160,11 +117,11 @@ class Boss:
                         complete_precent = (i + 1) / len(self.config.ai_tasks)
                         self.config.complete_percentage = complete_precent
                         self.config.save(CFG.boss_settings_file)
-                        # todo: add the check here to put the results in the file
                         if len(self.config.ai_task_results[i]["results"]) == 0:
                             file_name, text = self.parse_auto_gpt_logs()
                             # print("FILE NAME: ", file_name)
                             # print("TEXT: ", text)
+                            self.config.ai_task_results[i]["results"] = []
                             self.config.ai_task_results[i]["results"].append(
                                 {"file_name": file_name, "text": text}
                             )
@@ -174,6 +131,7 @@ class Boss:
                         buddy_config = construct_main_buddy_config(
                             task, self.config.target_percentage, buddy_name
                         )
+
                     else:
                         buddy_config = create_main_buddy_config(
                             task, self.config.target_percentage, buddy_name
@@ -203,7 +161,7 @@ class Boss:
                     if i != 0:
                         previous_results = self.config.ai_task_results[i - 1]
                         updated_results = json.dumps(previous_results)
-                        print("UPDATED RESULTS: ", updated_results)
+                        # print("UPDATED RESULTS: ", updated_results)
                         prep_results = (
                             updated_results.replace("{", "")
                             .replace("}", "")
@@ -237,146 +195,90 @@ class Boss:
                     self.config.save(CFG.boss_settings_file)
                     buddy.start_interaction_loop()
 
-                    # print(buddy.final_result)
                     # Extract relevant information from final_result
-                    # command = buddy.final_result['command']
                     task = buddy.final_result["task"]
                     feedback = buddy.final_result["feedback"]
                     arguments = buddy.final_result["arguments"]
                     # Create a new dictionary with all values from final_result
                     new_final_result = buddy.final_result.copy()
-                    # Display the summary
-
                     # Use the evaluation function to grade the worker's performance
                     performance_grade = self.evaluate_worker_performance(feedback)
-
-                    # Display the performance grade
-                    # print(f"{buddy_name} Performance Grade: {performance_grade}")
-                    # Add performance_grade to the new dictionary
                     new_final_result["performance_grade"] = performance_grade
-                    # print("self.config.target_percentage", self.config.target_percentage)
-                    # if performance_grade >= self.config.target_percentage:
-                    #     logger.typewriter_log(f"\n{buddy_name} : SUCCESS ", Fore.GREEN,
-                    #                           f"GRADE = {performance_grade} "
-                    #                           f"TARGET = {self.config.target_percentage}\n")
-                    #     BUDDY_JOB_COMPLETE = True
-                    #     self.config.ai_task_results.append(new_final_result)
                     self.config.ai_task_results[i]["score"] = performance_grade
                     complete_precent = (i + 1) / len(self.config.ai_tasks)
                     self.config.complete_percentage = complete_precent
-                    # print(self.config.ai_task_results[i]["score"])
+
                     file_name, text = self.parse_auto_gpt_logs()
+                    self.config.ai_task_results[i]["results"] = []
                     self.config.ai_task_results[i]["results"].append(
                         {"file_name": file_name, "text": text}
                     )
+                    self.config.ai_task_results[i]["status"] = "complete"
                     self.config.save(CFG.boss_settings_file)
+
+                    # In your main function/method:
+                    markdown_text = f"# 🚀 {buddy_name} : "
                     if performance_grade >= self.config.target_percentage:
-                        logger.typewriter_log(
-                            f"\n{buddy_name}",
-                            Fore.GREEN,
-                            f"GRADE = {performance_grade} "
-                            f"TARGET = {self.config.target_percentage}\n",
-                        )
-                        self.config.ai_task_results[i]["status"] = "complete"
-                        # print(self.config.ai_task_results[i]["status"])
-                        self.config.save(CFG.boss_settings_file)
-
-                        assistant_reply_json = {
-                            "thoughts": {
-                                "text": f"Task {i} : {task} has been completed by {buddy_name}.",
-                                "reasoning": f"The worker completed the assigned task : {task} : with a performance grade of {performance_grade}.",
-                                "plan": f"- We need to complete our remaining tasks.",
-                                "criticism": f"We need to complete our remaining tasks in a timely manner",
-                                "speak": f"I will report that Task {i} : {task} has been completed by {buddy_name}.",
-                            },
-                            "command": {
-                                "name": "task_complete",
-                                "args": {
-                                    "reason": f"The worker completed the assigned task : {task} : with a performance grade of {performance_grade}."
-                                },
-                            },
-                        }
-                        thoughts = assistant_reply_json.get("thoughts", {})
-                        # print(assistant_reply_json)
-                        self_feedback_resp = self.get_self_feedback_on_buddy(
-                            thoughts, cfg.fast_llm_model
-                        )
-                        # logger.typewriter_log(
-                        #     f"BUDDY FEEDBACK: {self_feedback_resp}",
-                        #     Fore.GREEN,
-                        #     "",
-                        # )
-                        display_feedback = self_feedback_resp.replace(
-                            "Y ",
-                            "",
-                        )
-                        markdown_text = f"``` {display_feedback}```"
-                        logger.log_markdown(markdown_text)
-                        if self_feedback_resp[0].lower().strip() == cfg.authorise_key:
-                            user_input = "GENERATE NEXT COMMAND JSON"
-                        else:
-                            user_input = self_feedback_resp
+                        markdown_text += f"Success : {performance_grade}/ {self.config.target_percentage} 🚀"
+                        status = "complete"
+                        complete_precent = (i + 1) / len(self.config.ai_tasks)
+                        self.config.complete_percentage = complete_precent
                     else:
-                        logger.typewriter_log(
-                            f"\n{buddy_name} : FAILED ",
-                            Fore.RED,
-                            f"GRADE = {performance_grade} "
-                            f"TARGET = {self.config.target_percentage}\n",
-                        )
-                        self.config.ai_task_results[i]["status"] = "fail"
-                        # print(self.config.ai_task_results[i]["status"])
-                        self.config.save(CFG.boss_settings_file)
-                        assistant_reply_json = {
-                            "thoughts": {
-                                "text": f"Task {i} : {task} has failed to be completed by {buddy_name}.",
-                                "reasoning": f"The worker failed to complete the assigned task : {task} : with a performance grade of {performance_grade}.",
-                                "plan": f"- We need to launch a new worker to complete this task before proceeding to the next task.",
-                                "criticism": f"Because the worker failed to meet the performance grade of {self.config.target_percentage} we need to launch a new worker to complete this task before proceeding to the next task.",
-                                "speak": f"Task {i} : {task} has failed to be completed by {buddy_name}.",
-                            },
-                            "command": {
-                                "name": "task_failed",
-                                "args": {
-                                    "reason": f"The worker failed to complete the assigned task : {task} : with a performance grade of {performance_grade}."
-                                },
-                            },
-                        }
-                        thoughts = assistant_reply_json.get("thoughts", {})
-                        # print(assistant_reply_json)
+                        markdown_text += f"Failed : {performance_grade}/ {self.config.target_percentage} 🚀"
+                        status = "fail"
 
-                        # todo expand this to evaluate the respons and then return the grade who it is needed
-                        self_feedback_resp = self.get_self_feedback_on_buddy(
-                            thoughts, cfg.fast_llm_model
-                        )
-                        # logger.typewriter_log(
-                        #     f"BUDDY FEEDBACK: {self_feedback_resp}",
-                        #     Fore.RED,
-                        #     "",
-                        # )
-                        display_feedback = self_feedback_resp.replace(
-                            "Y ",
-                            "",
-                        )
-                        markdown_text = f"``` {display_feedback}```"
-                        logger.log_markdown(markdown_text)
-                        if self_feedback_resp[0].lower().strip() == cfg.authorise_key:
-                            user_input = "GENERATE NEXT COMMAND JSON"
-                        else:
-                            user_input = self_feedback_resp
-
-                        BUDDY_JOB_COMPLETE = True
+                    self.log_and_save_results(
+                        logger,
+                        buddy_name,
+                        status,
+                        markdown_text,
+                        self.config,
+                        i,
+                        performance_grade,
+                        self.config.target_percentage,
+                        CFG,
+                    )
+                    assistant_reply_json = self.build_assistant_reply(
+                        status,
+                        i,
+                        task,
+                        buddy_name,
+                        performance_grade,
+                        self.config.target_percentage,
+                    )
+                    BUDDY_JOB_COMPLETE = True
 
             if assistant_reply_json != {}:
                 validate_json(assistant_reply_json, LLM_DEFAULT_RESPONSE_FORMAT)
                 # Get command name and arguments
                 try:
-                    print_assistant_thoughts(
-                        self.ai_name, assistant_reply_json, cfg.speak_mode
+                    # print_assistant_thoughts(
+                    #     self.ai_name, assistant_reply_json, cfg.speak_mode
+                    # )
+                    thoughts = assistant_reply_json.get("thoughts", {})
+                    # print(assistant_reply_json)
+                    self_feedback_resp = self.get_self_feedback_on_buddy(
+                        thoughts,
+                        cfg.fast_llm_model,
+                        self.config.ai_task_results[i]["results"][0],
                     )
+
+                    display_feedback = self_feedback_resp.replace(
+                        "Y ",
+                        "",
+                    )
+                    markdown_text = f"``` {display_feedback}```"
+                    logger.log_markdown(markdown_text)
+                    if self_feedback_resp[0].lower().strip() == cfg.authorise_key:
+                        user_input = "GENERATE NEXT COMMAND JSON"
+                    else:
+                        user_input = self_feedback_resp
 
                     command_name, arguments = get_boss_command(assistant_reply_json)
                     # if cfg.speak_mode:
                     #     say_text(f"I want to execute {command_name}")
+                    # print(f"Command Name : {command_name}")
+                    # print(f"Arguments : {arguments}")
 
                     send_chat_message_to_user("Thinking... \n")
                     arguments = self._resolve_pathlike_command_args(arguments)
@@ -396,25 +298,16 @@ class Boss:
                 logger.log_markdown(markdown_text)
                 markdown_text = f"```{text}```"
                 logger.log_markdown(markdown_text)
-                exit()
+                command_name = "boss_complete"
+                arguments = {
+                    "reason": f"MiniBoss has completed its job to - {self.config.ai_job} - by - {self.config.ai_role}"
+                }
 
-            # todo: code below may never be used
-            print("CHECK CODE BELOW IN boss.py")
+            # In your main function/method:
             if not cfg.continuous_mode and self.next_action_count == 0:
-                # ### GET USER AUTHORIZATION TO EXECUTE COMMAND ###
-                # Get key press: Prompt the user to press enter to continue or escape
-                # to exit
+                print("if not cfg.continuous_mode and self.next_action_count == 0")
                 self.user_input = ""
-                send_chat_message_to_user(
-                    "NEXT ACTION: \n " + f"COMMAND = {command_name} \n "
-                    f"ARGUMENTS = {arguments}"
-                )
-                logger.typewriter_log(
-                    "NEXT ACTION: ",
-                    Fore.CYAN,
-                    f"COMMAND = {Fore.CYAN}{command_name}{Style.RESET_ALL}  "
-                    f"ARGUMENTS = {Fore.CYAN}{arguments}{Style.RESET_ALL}",
-                )
+                self.print_next_action(command_name, arguments)
                 print(
                     "Enter 'y' to authorise command, 'y -N' to run N continuous commands, 's' to run self-feedback commands"
                     "'n' to exit program, or enter feedback for "
@@ -422,60 +315,16 @@ class Boss:
                     flush=True,
                 )
                 while True:
-                    console_input = ""
-                    if cfg.chat_messages_enabled:
-                        console_input = clean_input("Waiting for your response...")
-                    else:
-                        console_input = clean_input(
-                            Fore.MAGENTA + "Input:" + Style.RESET_ALL
-                        )
-                    if console_input.lower().strip() == cfg.authorise_key:
-                        user_input = "GENERATE NEXT COMMAND JSON"
+                    console_input = (
+                        clean_input(Fore.MAGENTA + "Input:" + Style.RESET_ALL)
+                        if not cfg.chat_messages_enabled
+                        else clean_input("Waiting for your response...")
+                    )
+                    user_input = self.handle_console_input(
+                        console_input, assistant_reply_json, cfg
+                    )
+                    if user_input in ["GENERATE NEXT COMMAND JSON", "EXIT"]:
                         break
-                    elif console_input.lower().strip() == "s":
-                        logger.typewriter_log(
-                            "-=-=-=-=-=-=-= THOUGHTS, REASONING, PLAN AND CRITICISM WILL NOW BE VERIFIED BY AGENT -=-=-=-=-=-=-=",
-                            Fore.GREEN,
-                            "",
-                        )
-                        thoughts = assistant_reply_json.get("thoughts", {})
-                        self_feedback_resp = self.get_self_feedback(
-                            thoughts, cfg.fast_llm_model
-                        )
-                        logger.typewriter_log(
-                            f"SELF FEEDBACK: {self_feedback_resp}",
-                            Fore.YELLOW,
-                            "",
-                        )
-                        if self_feedback_resp[0].lower().strip() == cfg.authorise_key:
-                            user_input = "GENERATE NEXT COMMAND JSON"
-                        else:
-                            user_input = self_feedback_resp
-                        break
-                    elif console_input.lower().strip() == "":
-                        print("Invalid input format.")
-                        continue
-                    elif console_input.lower().startswith(f"{cfg.authorise_key} -"):
-                        try:
-                            self.next_action_count = abs(
-                                int(console_input.split(" ")[1])
-                            )
-                            user_input = "GENERATE NEXT COMMAND JSON"
-                        except ValueError:
-                            print(
-                                f"Invalid input format. Please enter '{cfg.authorise_key} -N' where N is"
-                                " the number of continuous tasks."
-                            )
-                            continue
-                        break
-                    elif console_input.lower() == cfg.exit_key:
-                        user_input = "EXIT"
-                        break
-                    else:
-                        user_input = console_input
-                        command_name = "human_feedback"
-                        break
-
                 if user_input == "GENERATE NEXT COMMAND JSON":
                     logger.typewriter_log(
                         "-=-=-=-=-=-=-= COMMAND AUTHORISED BY USER -=-=-=-=-=-=-=",
@@ -485,49 +334,19 @@ class Boss:
                 elif user_input == "EXIT":
                     send_chat_message_to_user("Exiting...")
                     print("Exiting...", flush=True)
-                    break
             else:
-                # Print command
-                send_chat_message_to_user(
-                    "NEXT ACTION: \n " + f"COMMAND = {command_name} \n "
-                    f"ARGUMENTS = {arguments}"
-                )
+                self.print_next_action(command_name, arguments)
 
-                logger.typewriter_log(
-                    "NEXT ACTION: ",
-                    Fore.CYAN,
-                    f"COMMAND = {Fore.CYAN}{command_name}{Style.RESET_ALL}"
-                    f"  ARGUMENTS = {Fore.CYAN}{arguments}{Style.RESET_ALL}",
-                )
-
-            # Execute command
-            if command_name is not None and command_name.lower().startswith("error"):
-                result = (
-                    f"Command {command_name} threw the following error: {arguments}"
-                )
-            elif command_name == "human_feedback":
-                result = f"Human feedback: {user_input}"
-            else:
-                for plugin in cfg.plugins:
-                    if not plugin.can_handle_pre_command():
-                        continue
-                    command_name, arguments = plugin.pre_command(
-                        command_name, arguments
-                    )
-                command_result = execute_boss_command(
-                    self.command_registry,
-                    command_name,
-                    arguments,
-                    self.config.prompt_generator,
-                )
-                result = f"Command {command_name} returned: " f"{command_result}"
-
-                for plugin in cfg.plugins:
-                    if not plugin.can_handle_post_command():
-                        continue
-                    result = plugin.post_command(command_name, result)
-                if self.next_action_count > 0:
-                    self.next_action_count -= 1
+            # In your main function/method:
+            result = self.handle_command_execution(
+                command_name,
+                arguments,
+                user_input,
+                cfg,
+                self.command_registry,
+                self.config,
+                self.config.prompt_generator,
+            )
 
             # Check if there's a result from the command append it to the message
             # history
@@ -541,6 +360,31 @@ class Boss:
                 logger.typewriter_log(
                     "SYSTEM: ", Fore.YELLOW, "Unable to execute command"
                 )
+
+    def evaluate_worker_performance(self, feedback: str) -> float:
+        score_search = re.search(r"\b\d{1,2}\b", feedback)
+        if score_search:
+            score = float(score_search.group())
+            # normalize to a scale of 0-1
+            return score / 10
+        else:
+            # if no score was found in the feedback, handle accordingly
+            return 0.20
+
+    def set_results_for_tasks(self):
+        if len(self.config.ai_task_results) == 0:
+            for i, task in enumerate(self.config.ai_tasks):
+                self.config.ai_task_results.append(
+                    {
+                        "task": task,
+                        "results": [],
+                        "worker_count": 0,
+                        "status": "",
+                        "score": 0,
+                    }
+                )
+
+        self.config.save(CFG.boss_settings_file)
 
     def _resolve_pathlike_command_args(self, command_args):
         if "directory" in command_args and command_args["directory"] in {"", "/"}:
@@ -575,9 +419,6 @@ class Boss:
                 # Access the 'reason' value
                 file_name = arguments["filename"]
                 text = arguments["text"]
-                # Print the 'reason' value
-                print(f"Task complete File: {file_name}")
-                print(f"Task complete Text: {text}")
                 return file_name, text
         else:
             print("Task complete command not found in the log file.")
@@ -608,49 +449,193 @@ class Boss:
             llm_model,
         )
 
-    def get_self_feedback_on_buddy(self, thoughts: dict, llm_model: str) -> str:
-        """Generates a feedback response based on the provided thoughts dictionary.
-        This method takes in a dictionary of thoughts containing keys such as 'reasoning',
-        'plan', 'thoughts', and 'criticism'. It combines these elements into a single
-        feedback message and uses the create_chat_completion() function to generate a
-        response based on the input message.
-        Args:
-            thoughts (dict): A dictionary containing thought elements like reasoning,
-            plan, thoughts, and criticism.
-        Returns:
-            str: A feedback response generated using the provided thoughts dictionary.
-        """
+    def get_self_feedback_on_buddy(
+        self, thoughts: dict, llm_model: str, results: object
+    ) -> str:
         ai_role = self.config.ai_role
-
-        # todo: this needs to have a better input example
-        # todo: and then I can ensure I have all the pieces
         system_prompt = """
         Your task was to act as the Project Manager and develop a working plan of up to few steps and an appropriate
 role-based name (_GPT) for an autonomous worker agent, ensuring that the goals are optimally aligned with the
 successful completion of its assigned task. You then gave each goal to a work or autonomous agent to perform the work in order to achieve
 the desired plan. The workers were not aware of the original plan, only the work they need to perform.
-The user is going to provide you with the response from the worker, and you will provide only the output in the exact format specified below in example output with no explanation or conversation.
-
-Example input:
-{'thoughts': {'text': 'Task 0 : Research Assistant: Find a reliable weather API that provides weather information for Blue Ridge, GA and obtain an API key. Provide the API key to the Webpage Developer. has been completed by Buddy-0.', 'reasoning': 'The worker completed the assigned task : Research Assistant: Find a reliable weather API that provides weather information for Blue Ridge, GA and obtain an API key. Provide the API key to the Webpage Developer. : with a performance grade of 0.95.', 'plan': '- We need to complete our remaining tasks.', 'criticism': 'We need to complete our remaining tasks in a timely manner', 'speak': 'I will report that Task 0 : Research Assistant: Find a reliable weather API that provides weather information for Blue Ridge, GA and obtain an API key. Provide the API key to the Webpage Developer. has been completed by Buddy-0.'}, 'command': {'name': 'task_complete', 'args': {'reason': 'The worker completed the assigned task : Research Assistant: Find a reliable weather API that provides weather information for Blue Ridge, GA and obtain an API key. Provide the API key to the Webpage Developer. : with a performance grade of 0.95.'}}}
-
-Example output:
-Name: Buddy-0 - Research Assistant - Assessment
-Job: Find a reliable weather API that provides weather information for Blue Ridge, GA and obtain an API key. Provide the API key to the Webpage Developer
-Feedback:
-Grade: 0.95
+The user is going to provide you with the response from the worker, and you will provide only the output in the exact format specified below in the output description with no explanation or conversation.
 """
-        feedback_prompt = f"Below is a message from an AI boss with the role of {ai_role}. Please review the provided Thought, Reasoning, Plan, and Criticism. If these elements accurately contribute to the successful execution of the assumed role, respond with the letter 'Y' followed by a space, and then explain why it is effective. If the provided information is not suitable for achieving the role's objectives, please provide one or more sentences addressing the issue and suggesting a resolution."
+
+        feedback_prompt = f"""As a supervisor AI with the role of {ai_role}, please provide a detailed review of the worker's performance.
+Consider the worker's Thought, Reasoning, Plan, and Criticism in your analysis.
+Rate the performance on a scale of 1-10, with 1 being 'extremely ineffective' and 10 being 'extremely effective'.
+Please also provide a detailed explanation for your rating and, if applicable, suggestions for improvement."""
+
         reasoning = thoughts.get("reasoning", "")
         plan = thoughts.get("plan", "")
         thought = thoughts.get("thoughts", "")
         criticism = thoughts.get("criticism", "")
-        feedback_thoughts = thought + reasoning + plan + criticism
+        feedback_thoughts = (
+            thought
+            + reasoning
+            + " "
+            + results["text"]
+            + " "
+            + results["file_name"]
+            + plan
+            + criticism
+        )
         # print("feedback_thoughts", feedback_thoughts)
         return create_chat_completion(
             [
-                {"role": "system", "content": feedback_prompt + feedback_thoughts},
-                {"role": "user", "content": feedback_prompt + feedback_thoughts},
+                {"role": "system", "content": system_prompt},
+                {"role": "assistant", "content": feedback_prompt},
+                {"role": "user", "content": feedback_thoughts},
             ],
             llm_model,
         )
+
+    def log_and_save_results(
+        self,
+        logger,
+        buddy_name,
+        status,
+        markdown_text,
+        config,
+        i,
+        performance_grade,
+        target_percentage,
+        CFG,
+    ):
+        logger.log_markdown(markdown_text)
+        config.ai_task_results[i]["status"] = status
+        config.save(CFG.boss_settings_file)
+        logger.typewriter_log(
+            f"\n{buddy_name} : {status.upper()} ",
+            Fore.GREEN if status == "complete" else Fore.RED,
+            f"GRADE = {performance_grade} " f"TARGET = {target_percentage}\n",
+        )
+
+    def build_assistant_reply(
+        self, status, i, task, buddy_name, performance_grade, target_percentage
+    ):
+        base_text = f"Task {i} {task} has "
+        base_reason = f"The worker "
+        if status == "complete":
+            base_text += f"been completed by {buddy_name}."
+            base_reason += f"completed the assigned task {task} with a performance grade of {performance_grade}."
+            plan = "- We need to complete our remaining tasks."
+            criticism = "We need to complete our remaining tasks in a timely manner"
+            command_name = "task_complete"
+        else:
+            base_text += f"failed to be completed by {buddy_name}."
+            base_reason += f"failed to complete the assigned task {task} with a performance grade of {performance_grade}."
+            plan = "- We need to launch a new worker to complete this task before proceeding to the next task."
+            criticism = f"Because the worker failed to meet the performance grade of {target_percentage} we need to launch a new worker to complete this task before proceeding to the next task."
+            command_name = "task_failed"
+
+        return {
+            "thoughts": {
+                "text": base_text,
+                "reasoning": base_reason,
+                "plan": plan,
+                "criticism": criticism,
+                "speak": base_text,
+            },
+            "command": {
+                "name": command_name,
+                "args": {
+                    "reason": base_reason,
+                },
+            },
+        }
+
+    def handle_command_error(self, command_name, arguments):
+        return f"Command {command_name} threw the following error: {arguments}"
+
+    def handle_human_feedback(self, user_input):
+        return f"Human feedback: {user_input}"
+
+    def execute_command(
+        self, command_name, arguments, cfg, command_registry, config, prompt_generator
+    ):
+        for plugin in cfg.plugins:
+            if not plugin.can_handle_pre_command():
+                continue
+            command_name, arguments = plugin.pre_command(command_name, arguments)
+
+        command_result = execute_boss_command(
+            command_registry,
+            command_name,
+            arguments,
+            config.prompt_generator,
+        )
+        result = f"Command {command_name} returned: " f"{command_result}"
+
+        for plugin in cfg.plugins:
+            if not plugin.can_handle_post_command():
+                continue
+            result = plugin.post_command(command_name, result)
+        return result
+
+    def handle_command_execution(
+        self,
+        command_name,
+        arguments,
+        user_input,
+        cfg,
+        command_registry,
+        config,
+        prompt_generator,
+    ):
+        if command_name is not None and command_name.lower().startswith("error"):
+            result = self.handle_command_error(command_name, arguments)
+        elif command_name == "human_feedback":
+            result = self.handle_human_feedback(user_input)
+        else:
+            result = self.execute_command(
+                command_name, arguments, cfg, command_registry, config, prompt_generator
+            )
+            if cfg.next_action_count > 0:
+                cfg.next_action_count -= 1
+        return result
+
+    def print_next_action(self, command_name, arguments):
+        send_chat_message_to_user(
+            "NEXT ACTION: \n " + f"COMMAND = {command_name} \n "
+            f"ARGUMENTS = {arguments}"
+        )
+        logger.typewriter_log(
+            "NEXT ACTION: ",
+            Fore.CYAN,
+            f"COMMAND = {Fore.CYAN}{command_name}{Style.RESET_ALL}  "
+            f"ARGUMENTS = {Fore.CYAN}{arguments}{Style.RESET_ALL}",
+        )
+
+    def handle_console_input(self, console_input, assistant_reply_json, cfg):
+        if console_input.lower().strip() == cfg.authorise_key:
+            return "GENERATE NEXT COMMAND JSON"
+        elif console_input.lower().strip() == "s":
+            logger.typewriter_log(
+                "-=-=-=-=-=-=-= THOUGHTS, REASONING, PLAN AND CRITICISM WILL NOW BE VERIFIED BY AGENT -=-=-=-=-=-=-=",
+                Fore.GREEN,
+                "",
+            )
+            thoughts = assistant_reply_json.get("thoughts", {})
+            self_feedback_resp = self.get_self_feedback(thoughts, cfg.fast_llm_model)
+            logger.typewriter_log(
+                f"SELF FEEDBACK: {self_feedback_resp}",
+                Fore.YELLOW,
+                "",
+            )
+            return self_feedback_resp
+        elif console_input.lower().strip() == "":
+            print("Invalid input format.")
+        elif console_input.lower().startswith(f"{cfg.authorise_key} -"):
+            try:
+                self.next_action_count = abs(int(console_input.split(" ")[1]))
+                return "GENERATE NEXT COMMAND JSON"
+            except ValueError:
+                print(
+                    f"Invalid input format. Please enter '{cfg.authorise_key} -N' where N is"
+                    " the number of continuous tasks."
+                )
+        elif console_input.lower() == cfg.exit_key:
+            return "EXIT"
+        else:
+            return console_input

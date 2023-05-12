@@ -13,6 +13,12 @@ from miniboss.logs import logger
 
 CFG = Config()
 
+from datetime import date
+
+
+def print_todays_date():
+    return date.today()
+
 
 def prompt_user() -> BossConfig:
     """Prompt the user for input
@@ -140,23 +146,25 @@ def generate_aiconfig_automatic(user_prompt) -> BossConfig:
     BossConfig: The BossConfig object tailored to the user's input
     """
 
-    system_prompt = """
-Your task is to act as the Boss and develop a working plan with a few steps and an appropriate role-based name (_MiniBoss) for an autonomous worker MiniBoss, ensuring the goals are aligned optimally with the successful completion of its assigned task. The autonomous agent will perform the work according to the desired plan, so you need to provide very detailed steps that can be followed by the worker. The workers are not aware of the original plan, only the work they need to perform. As a project manager, you will be able to assign each step of the plan to an independent worker. You aim for them to be effective and efficient in completing their goal. Therefore, ensure each step is actionable, and produces a result.
+    system_prompt = f"""Your task is to act as the MiniBoss, an orchestrator of sub-tasks. Your role involves developing a detailed working plan to accomplish the main goal provided by the user.
+    The working plan should contain a series of actionable steps, each of which can be assigned to an autonomous worker (Buddy) for execution.
+    Remember, the Buddies are not privy to the overall plan; they only receive the specific sub-tasks you assign to them. Therefore, each sub-task needs to be self-contained, actionable, and result-oriented. Each sub-task should lead to a tangible output that contributes directly to the main goal.
+    In your task assignments, prioritize quick solutions that leverage existing resources. Encourage the use of internet searches like Google or Bing to rapidly gather necessary information or solve problems rather than creating new APIs or software.
+    The user will provide the main task. Your output should be in the exact format specified in the example output below, with no additional explanation or conversation.
 
-The user will provide the task, and you will provide the output in the exact format specified in the example output below, with no explanation or conversation.
+        The current date is {print_todays_date()}.
 
-Example input:
-Find the weather information for Blue Ridge, GA for today.
+        Example input:
+        Analyze and report on the performance of Tesla's stock price this week.
 
-Example output:
-
-Name: WeatherBot-MiniBoss
-Description: A working plan to efficiently find and summarize the weather information for Blue Ridge, GA for today.
-Jobs:
-- DataCollector: Utilize search capabilities to gather data on the current weather for Blue Ridge, GA, including temperature, precipitation, and any other relevant information.
-- SummaryWriter: Take the data obtained by the DataCollector and create a brief, clear, and concise summary of the current weather in Blue Ridge, GA, including temperature, precipitation, and other relevant information.
-
-"""
+        Example output:
+        Name: StockAnalysisBot-MiniBoss
+        Role: Devise a strategic plan to efficiently analyze and report on the performance of Tesla's stock price for the current week, considering today's date is {print_todays_date()}. This involves coordinating autonomous agents to collect, analyze, and summarize the relevant data.
+        Tasks:
+        - DataCollector: Use Google or Bing search to retrieve the most recent and reliable Tesla's stock prices for the current week. Your task is to prioritize speed and accuracy in your data collection.
+        - DataAnalyzer: Perform a detailed analysis on the retrieved data to discern patterns, trends, and notable events. Your analysis should enable clear insights into Tesla's stock performance this week.
+        - ReportWriter: Compile the insights from the data analysis into a clear, concise report summarizing the performance of Tesla's stock price this week.
+        """
 
     # Call LLM with the string as user input
     messages = [
@@ -166,15 +174,16 @@ Jobs:
         },
         {
             "role": "assistant",
-            "content": "Make sure to respond only with the output in the exact format specified in the system prompt example output, with no explanation or conversation. Focus on creating a plan with well-aligned goals to ensure the successful completion of the assigned task.",
+            "content": "Your main focus should be on devising a strategic plan, breaking down the user's task into self-contained, actionable steps. Each step should be defined clearly and lead to a tangible output that directly contributes to the main task. Remember to assign each step to an appropriate autonomous worker role. Keep your output strictly within the format specified in the system prompt, without any additional explanation or conversation.",
         },
         {
             "role": "user",
             "content": f"Task: '{user_prompt}'\n",
         },
     ]
+
     # print(messages)
-    output = create_chat_completion(messages, CFG.fast_llm_model)
+    output = create_chat_completion(messages, CFG.smart_llm_model)
     # print(output)
     # Debug LLM Output
     logger.debug(f"AI Config Generator Raw Output: {output}")
@@ -183,7 +192,7 @@ Jobs:
     ai_name = re.search(r"Name(?:\s*):(?:\s*)(.*)", output, re.IGNORECASE).group(1)
     ai_role = (
         re.search(
-            r"Description(?:\s*):(?:\s*)(.*?)(?:(?:\n)|Job)",
+            r"Role(?:\s*):(?:\s*)(.*?)(?:(?:\n)|Job)",
             output,
             re.IGNORECASE | re.DOTALL,
         )
@@ -206,22 +215,25 @@ def generate_aiconfig_automatic_buddy_gpt(
     BossConfig: The BossConfig object tailored to the user's input
     """
 
-    system_prompt = """
+    system_prompt = f"""
+        Your task is to act as a Buddy, an autonomous worker. You will be assigned a specific task to complete, and you must develop 1 to 2 strategic goals to achieve this task effectively. Additionally, assign yourself an appropriate role-based name (StockDataCollector-Buddy) to reflect your function in the task.
 
-Your task is to be an efficient automated AI worker. Develop 1 to 2 goals to solve your job, along with an appropriate role-based name (WeatherBot-Buddy) for an autonomous worker agent, ensuring that the goals are optimally aligned with the successful completion of your assigned task. You, as the autonomous agent, will perform the work to achieve the desired plan, so you need to be very quick and efficient. Avoid writing or suggesting code in your response unless specifically tasked with the job of producing code.
+        Remember, you are an autonomous agent whose goal is to achieve the task quickly and efficiently. To do this, prioritize using internet searches to gather necessary information or solve problems. Unless it is absolutely necessary, you should avoid writing or suggesting code.
 
-The WeatherBot-MiniBoss will provide the job you are supposed to complete. You, as the worker, will provide only the output in the exact format specified below in example output with no explanation or conversation.
+        The MiniBoss will provide you with the task you need to complete. Your output should be in the exact format specified in the example output below, with no additional explanation or conversation.
 
-Example input:
-Utilize search capabilities to gather data on the current weather for Blue Ridge, GA, including temperature, precipitation, and any other relevant information.
+        The current date is {print_todays_date()}.
 
-Example output:
-Name: WeatherBot-Buddy
-Role: I am tasked to rapidly collect accurate weather data for Blue Ridge, GA, including temperature, precipitation, and any other relevant information.
-Goals:
-- Access the required data source quickly, extract the necessary weather data for Blue Ridge, GA, including temperature, precipitation, and any other relevant details.
-- Once the data is gathered, promptly complete your task after ensuring you have saved the collected weather information.
-"""
+        Example input:
+        Use appropriate data sources to retrieve Tesla's stock prices for the current week.
+
+        Example output:
+        Name: StockDataCollector-Buddy
+        Role: My task is to rapidly and accurately retrieve Tesla's stock prices for the current week, considering today's date is {print_todays_date()}.
+        Goals:
+        - Utilize internet search engines like Google or Bing to identify the most appropriate and reliable data sources for retrieving Tesla's stock prices for the current week. Ensure the data is recent and accurate.
+        - Extract the necessary stock price data and save it in a format that can be easily analyzed. Promptly complete your task, ensuring the data is ready for further analysis.
+        """
 
     # Call LLM with the string as user input
     messages = [
@@ -231,15 +243,16 @@ Goals:
         },
         {
             "role": "assistant",
-            "content": "Ensure you respond only with the output in the exact format specified in the system prompt example output, with no explanation or conversation. Remember to work quickly and efficiently, prioritizing the most important actions. Try not to write or suggest code in your response unless specifically tasked with the job of producing code.",
+            "content": "As an autonomous worker, your focus should be on achieving your assigned task quickly and accurately. Formulate clear goals that align with your task. Avoid suggesting or writing code unless your task explicitly requires it. If you're provided a location of a previous worker's data file, ensure you search the directory first. Adhere strictly to the format specified in the system prompt, providing no additional explanation or conversation.",
         },
         {
             "role": "user",
             "content": f"Task: '{user_prompt}'\n",
         },
     ]
+
     # print(messages)
-    output = create_chat_completion(messages, CFG.fast_llm_model)
+    output = create_chat_completion(messages, CFG.smart_llm_model)
     # print(output)
     # Debug LLM Output
     logger.debug(f"AI Config Generator Raw Output: {output}")

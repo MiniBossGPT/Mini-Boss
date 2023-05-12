@@ -1,5 +1,8 @@
 from __future__ import annotations
 
+import os
+import time
+
 import openai
 
 from miniboss.config import Config
@@ -20,6 +23,9 @@ class ApiManager(metaclass=Singleton):
         self.total_completion_tokens = 0
         self.total_cost = 0
         self.total_budget = 0.0
+
+    import os
+    import time
 
     def create_chat_completion(
         self,
@@ -42,28 +48,47 @@ class ApiManager(metaclass=Singleton):
         cfg = Config()
         if temperature is None:
             temperature = cfg.temperature
-        if deployment_id is not None:
-            response = openai.ChatCompletion.create(
-                deployment_id=deployment_id,
-                model=model,
-                messages=messages,
-                temperature=temperature,
-                max_tokens=max_tokens,
-                api_key=cfg.openai_api_key,
-            )
-        else:
-            response = openai.ChatCompletion.create(
-                model=model,
-                messages=messages,
-                temperature=temperature,
-                max_tokens=max_tokens,
-                api_key=cfg.openai_api_key,
-            )
-        logger.debug(f"Response: {response}")
-        prompt_tokens = response.usage.prompt_tokens
-        completion_tokens = response.usage.completion_tokens
-        self.update_cost(prompt_tokens, completion_tokens, model)
-        return response
+
+        MAX_RETRIES = 5
+        BACKOFF_START = 1  # initial backoff delay in seconds
+        fallback_model = "gpt-3.5-turbo"  # model to use if all retries fail
+
+        for attempt in range(MAX_RETRIES):
+            try:
+                if deployment_id is not None:
+                    response = openai.ChatCompletion.create(
+                        deployment_id=deployment_id,
+                        model=model,
+                        messages=messages,
+                        temperature=temperature,
+                        max_tokens=max_tokens,
+                        api_key=cfg.openai_api_key,
+                    )
+                else:
+                    response = openai.ChatCompletion.create(
+                        model=model,
+                        messages=messages,
+                        temperature=temperature,
+                        max_tokens=max_tokens,
+                        api_key=cfg.openai_api_key,
+                    )
+                logger.debug(f"Response: {response}")
+                prompt_tokens = response.usage.prompt_tokens
+                completion_tokens = response.usage.completion_tokens
+                self.update_cost(prompt_tokens, completion_tokens, model)
+                return response
+
+            except Exception as e:
+                logger.error(f"Error on attempt {attempt + 1}: {e}")
+                if attempt < MAX_RETRIES - 1:  # if not the last attempt
+                    delay = BACKOFF_START * 2**attempt
+                    logger.info(f"Waiting for {delay} seconds before retrying...")
+                    time.sleep(delay)
+                elif model == self.smart_llm_model:  # if last attempt and using gpt-4
+                    logger.info("Retries exhausted. Falling back to gpt-3.5-turbo.")
+                    model = fallback_model
+                else:  # if last attempt and already using fallback model
+                    raise
 
     def update_cost(self, prompt_tokens, completion_tokens, model):
         """

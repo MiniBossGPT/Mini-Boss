@@ -215,10 +215,8 @@ def execute_boss_command(
         # non-file is given, return instructions "Input should be a python
         # filepath, write your code to file and try again
         elif command_name == "task_complete":
-            print("boss complete")
-            shutdown()
-        elif command_name == "jobs_complete":
-            print("jobs complete")
+            return
+        elif command_name == "boss_complete":
             shutdown()
         else:
             for command in prompt.commands:
@@ -280,7 +278,7 @@ def shutdown() -> NoReturn:
     "Start GPT Agent",
     '"name": "<name>", "task": "<short_task_desc>", "prompt": "<prompt>"',
 )
-def start_boss(name: str, task: str, prompt: str, model=CFG.fast_llm_model) -> str:
+def start_boss(name: str, task: str, prompt: str, model=CFG.smart_llm_model) -> str:
     """Start an buddy with a given name, task, and prompt
 
     Args:

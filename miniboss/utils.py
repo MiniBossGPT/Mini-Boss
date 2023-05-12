@@ -1,4 +1,5 @@
 import os
+import sys
 from pathlib import Path
 
 import requests
@@ -8,13 +9,19 @@ from git.repo import Repo
 from rich import print
 from rich.markdown import Markdown
 
+from miniboss.commands.command import CommandRegistry
 from miniboss.logs import logger
+from miniboss.plugins import scan_plugins
+from miniboss.workspace import Jobspace
 
 # Use readline if available (for clean_input)
 try:
     import readline
 except:
     pass
+
+import ast
+import re
 
 from miniboss.config import Config
 
@@ -157,3 +164,98 @@ def get_latest_markdown() -> str:
         open("CURRENT_BULLETIN.md", "w", encoding="utf-8").write(new_bulletin)
         return f" {Fore.RED}::UPDATED:: {Fore.CYAN}{new_bulletin}{Fore.RESET}"
     return current_bulletin
+
+
+def parse_auto_gpt_logs(target_directory):
+    # Define the log file path
+    log_file_path = os.path.join(target_directory, "logs/activity.log")
+    # Read the log file in reverse
+    with open(log_file_path, "r", encoding="utf-8") as log_file:
+        lines = log_file.readlines()
+        lines.reverse()
+    # Define a regular expression pattern to match the "task_complete" command and its arguments
+    pattern = r"COMMAND = task_complete\s+ARGUMENTS = ({.*})"
+    # Search for the pattern in the reversed log content
+    reason = ""
+    for line in lines:
+        match = re.search(pattern, line)
+        if match:
+            arguments_str = match.group(1)
+            # Parse the string to a Python dictionary
+            arguments = ast.literal_eval(arguments_str)
+            # Access the 'reason' value
+            pre_reason = arguments["reason"]
+            # Remove single and double quotes
+            reason = pre_reason.strip("'\"").replace("'", "")
+            # Print the 'reason' value
+            # print(f"Task complete Reason: {reason}")
+            return reason
+    else:
+        # make this an error
+        # print("Task complete command not found in the log file.")
+        return reason
+
+
+def check_news_updates(cfg):
+    if not cfg.skip_news:
+        motd = get_latest_markdown()
+        if motd:
+            display_latest_news()
+
+
+def display_latest_news():
+    markdown_file = Path("CURRENT_BULLETIN.md")
+    content = markdown_file.read_text()
+    markdown_content = Markdown(content)
+    print(markdown_content)
+
+
+def log_warnings():
+    check_git_branch()
+    check_python_version()
+
+
+def check_git_branch():
+    git_branch = get_current_git_branch()
+    if git_branch and git_branch not in ["stable", "main"]:
+        logger.typewriter_log(
+            "WARNING: ",
+            Fore.RED,
+            f"You are running on `{git_branch}` branch - this is not a supported branch.",
+        )
+
+
+def check_python_version():
+    if sys.version_info < (3, 10):
+        logger.typewriter_log(
+            "WARNING: ",
+            Fore.RED,
+            "You are running on an older version of Python. Some people have observed problems with certain "
+            "parts of Mini-Boss with this version. Please consider upgrading to Python 3.10 or higher.",
+        )
+
+
+def setup_workspace(cfg, workspace_directory):
+    if workspace_directory is None:
+        workspace_directory = Path(__file__).parent.parent / "miniboss_workspace"
+    else:
+        workspace_directory = Path(workspace_directory)
+    workspace_directory = Jobspace.make_workspace(workspace_directory)
+    cfg.workspace_path = str(workspace_directory)
+    return workspace_directory
+
+
+def setup_file_logger(cfg, workspace_directory):
+    file_logger_path = workspace_directory / "file_logger.txt"
+    if not file_logger_path.exists():
+        with file_logger_path.open(mode="w", encoding="utf-8") as f:
+            f.write("File Operation Logger ")
+    cfg.file_logger_path = str(file_logger_path)
+
+
+def setup_plugins_and_commands(cfg):
+    cfg.set_plugins(scan_plugins(cfg, cfg.debug_mode))
+    command_registry = CommandRegistry()
+    command_registry.import_commands("miniboss.app")
+    command_registry.import_commands("miniboss.buddy_app")
+    return command_registry
