@@ -3,7 +3,7 @@
 [![Twitter Follow](https://img.shields.io/twitter/follow/minibossgpt?style=social)](https://twitter.com/MiniBossGPT)
 
 <p align="center">
-  <img src="https://raw.githubusercontent.com/MiniBossGPT/Mini-Boss/master/DALE_2_MINI_BOSS.PNG" width="60%" height="60%">
+  <img src="https://raw.githubusercontent.com/MiniBossGPT/Mini-Boss/master/images/DALE_2_MINI_BOSS.PNG" width="60%" height="60%">
 </p>
 
 
