@@ -31,29 +31,47 @@ class Boss:
     """Boss class for interacting with Mini-Boss.
 
     Attributes:
-        ai_name: The name of the boss.
-        memory: The memory object to use.
-        full_message_history: The full message history.
-        next_action_count: The number of actions to execute.
-        system_prompt: The system prompt is the initial prompt that defines everything
-          the AI needs to know to achieve its task successfully.
-        Currently, the dynamic and customizable information in the system prompt are
-          ai_name, description and goals.
-
-        triggering_prompt: The last sentence the AI will see before answering.
+        ai_name (str): The name of the boss.
+        memory (object): The memory object to use.
+        full_message_history (list): The full message history.
+        next_action_count (int): The number of actions to execute.
+        command_registry (object): The command registry object.
+        config (object): The configuration object.
+        system_prompt (str): The system prompt is the initial prompt that defines everything
+            the AI needs to know to achieve its task successfully.
+            Currently, the dynamic and customizable information in the system prompt are
+            ai_name, description, and goals.
+        triggering_prompt (str): The last sentence the AI will see before answering.
             For Mini-Boss, this prompt is:
             Determine which next command to use, and respond using the format specified
-              above:
+            above:
             The triggering prompt is not part of the system prompt because between the
-              system prompt and the triggering
+            system prompt and the triggering
             prompt we have contextual information that can distract the AI and make it
-              forget that its goal is to find the next task to achieve.
+            forget that its goal is to find the next task to achieve.
             SYSTEM PROMPT
             CONTEXTUAL INFORMATION (memory, previous conversations, anything relevant)
             TRIGGERING PROMPT
+        workspace (object): The workspace object.
+        max_workers (int): The maximum number of workers.
 
-        The triggering prompt reminds the AI about its short term meta task
-        (defining the next task)
+    Methods:
+        start_interaction_loop(): Starts the interaction loop.
+        evaluate_worker_performance(feedback): Evaluates the worker's performance based on the feedback.
+        set_results_for_tasks(): Sets the results for the tasks.
+        _resolve_pathlike_command_args(command_args): Resolves path-like command arguments.
+        parse_auto_gpt_logs(): Parses the auto-gpt logs.
+        get_self_feedback(thoughts, llm_model): Generates self-feedback based on the thoughts.
+        get_self_feedback_on_buddy(thoughts, llm_model, results): Generates self-feedback on the buddy based on the thoughts and results.
+        log_and_save_results(logger, buddy_name, status, markdown_text, config, i, performance_grade, target_percentage, CFG): Logs and saves the results.
+        build_assistant_reply(status, i, task, buddy_name, performance_grade, target_percentage): Builds the assistant's reply based on the status and other parameters.
+        handle_command_error(command_name, arguments): Handles the command error.
+        handle_human_feedback(user_input): Handles the human feedback.
+        execute_command(command_name, arguments, cfg, command_registry, config, prompt_generator): Executes the command.
+        handle_command_execution(command_name, arguments, user_input, cfg, command_registry, config, prompt_generator): Handles the command execution.
+        print_next_action(command_name, arguments): Prints the next action.
+        handle_console_input(console_input, assistant_reply_json, cfg): Handles the console input.
+
     """
 
     def __init__(
@@ -69,6 +87,33 @@ class Boss:
         workspace_directory,
         max_workers,
     ):
+        """Initialize the Boss class for interacting with Mini-Boss.
+
+        Args:
+            ai_name (str): The name of the boss.
+            memory (object): The memory object to use.
+            full_message_history (list): The full message history.
+            next_action_count (int): The number of actions to execute.
+            command_registry (object): The command registry object.
+            config (object): The configuration object.
+            system_prompt (str): The system prompt is the initial prompt that defines everything
+                the AI needs to know to achieve its task successfully.
+                Currently, the dynamic and customizable information in the system prompt are
+                ai_name, description, and goals.
+            triggering_prompt (str): The last sentence the AI will see before answering.
+                For Mini-Boss, this prompt is:
+                Determine which next command to use, and respond using the format specified
+                above:
+                The triggering prompt is not part of the system prompt because between the
+                system prompt and the triggering
+                prompt we have contextual information that can distract the AI and make it
+                forget that its goal is to find the next task to achieve.
+                SYSTEM PROMPT
+                CONTEXTUAL INFORMATION (memory, previous conversations, anything relevant)
+                TRIGGERING PROMPT
+            workspace_directory (str): The directory path for the workspace.
+            max_workers (int): The maximum number of workers.
+        """
         cfg = Config()
         self.ai_name = ai_name
         self.memory = memory
@@ -82,6 +127,19 @@ class Boss:
         self.max_workers = max_workers
 
     def start_interaction_loop(self):
+        """Start the interaction loop for the Boss class.
+
+        This method initiates the interaction loop where the Boss communicates with Mini-Boss.
+        It performs tasks such as thinking, processing commands, evaluating performance, and
+        generating the next command.
+
+        Note:
+            This method assumes that the necessary configurations and parameters are already set
+            in the Boss instance.
+
+        Returns:
+            None
+        """
         # Interaction Loop
         cfg = Config()
         loop_count = 0
@@ -362,6 +420,17 @@ class Boss:
                 )
 
     def evaluate_worker_performance(self, feedback: str) -> float:
+        """Evaluate the performance of a worker based on the provided feedback.
+
+        This method calculates a performance score for a worker based on the feedback received.
+        The score is normalized to a scale of 0-1, with 1 being the highest performance.
+
+        Args:
+            feedback (str): The feedback received for the worker's performance.
+
+        Returns:
+            float: The performance score, normalized to a scale of 0-1.
+        """
         score_search = re.search(r"\b\d{1,2}\b", feedback)
         if score_search:
             score = float(score_search.group())
@@ -372,6 +441,19 @@ class Boss:
             return 0.20
 
     def set_results_for_tasks(self):
+        """Set the initial results structure for each task.
+
+        This method initializes the results structure for each task in the `ai_task_results` list.
+        If the `ai_task_results` list is empty, it creates a results dictionary for each task
+        and appends it to the list. The initial values for `worker_count`, `status`, and `score`
+        are set to 0.
+
+        Note:
+            This method assumes that the necessary configurations are already set in the Boss instance.
+
+        Returns:
+            None
+        """
         if len(self.config.ai_task_results) == 0:
             for i, task in enumerate(self.config.ai_tasks):
                 self.config.ai_task_results.append(
@@ -387,6 +469,18 @@ class Boss:
         self.config.save(CFG.boss_settings_file)
 
     def _resolve_pathlike_command_args(self, command_args):
+        """Resolve path-like command arguments.
+
+        This method resolves path-like command arguments by converting them to absolute paths.
+        It checks for specific keys in the `command_args` dictionary, such as 'filename', 'directory',
+        and 'clone_path', and converts their values to absolute paths using the workspace's `get_path` method.
+
+        Args:
+            command_args (dict): The command arguments dictionary.
+
+        Returns:
+            dict: The modified command arguments dictionary with resolved path-like values.
+        """
         if "directory" in command_args and command_args["directory"] in {"", "/"}:
             command_args["directory"] = str(self.workspace.root)
         else:
@@ -398,6 +492,15 @@ class Boss:
         return command_args
 
     def parse_auto_gpt_logs(self):
+        """Parse the auto-gpt logs to extract task complete information.
+
+        This method reads the auto-gpt log file in reverse and searches for the "task_complete"
+        command and its arguments. It returns the file name and text obtained from the command.
+
+        Returns:
+            tuple: A tuple containing the file name and text obtained from the task complete command.
+                   If the task complete command is not found, empty strings are returned.
+        """
         # Define the log file path
         target_directory = f"{os.getcwd()}/auto-gpt"
         log_file_path = os.path.join(target_directory, "logs/activity.log")
@@ -425,14 +528,18 @@ class Boss:
             return file_name, text
 
     def get_self_feedback(self, thoughts: dict, llm_model: str) -> str:
-        """Generates a feedback response based on the provided thoughts dictionary.
+        """Generate feedback based on thoughts dictionary.
+
         This method takes in a dictionary of thoughts containing keys such as 'reasoning',
         'plan', 'thoughts', and 'criticism'. It combines these elements into a single
-        feedback message and uses the create_chat_completion() function to generate a
+        feedback message and uses the `create_chat_completion()` function to generate a
         response based on the input message.
+
         Args:
             thoughts (dict): A dictionary containing thought elements like reasoning,
-            plan, thoughts, and criticism.
+                plan, thoughts, and criticism.
+            llm_model (str): The language model used to generate the feedback.
+
         Returns:
             str: A feedback response generated using the provided thoughts dictionary.
         """
@@ -452,6 +559,24 @@ class Boss:
     def get_self_feedback_on_buddy(
         self, thoughts: dict, llm_model: str, results: object
     ) -> str:
+        """Generate feedback on worker's performance.
+
+        This method generates feedback on the worker's performance based on the provided
+        thoughts dictionary, the language model used, and the results obtained from the worker.
+        It combines elements such as 'reasoning', 'plan', 'thoughts', 'criticism', 'text',
+        and 'file_name' into a single feedback message and uses the `create_chat_completion()`
+        function to generate a response based on the input message.
+
+        Args:
+            thoughts (dict): A dictionary containing thought elements like reasoning,
+                plan, thoughts, and criticism.
+            llm_model (str): The language model used to generate the feedback.
+            results (object): The results obtained from the worker.
+
+        Returns:
+            str: A feedback response generated using the provided thoughts dictionary,
+                worker's results, and the language model.
+        """
         ai_role = self.config.ai_role
         system_prompt = """
         Your task was to act as the Project Manager and develop a working plan of up to few steps and an appropriate
@@ -502,6 +627,26 @@ Please also provide a detailed explanation for your rating and, if applicable, s
         target_percentage,
         CFG,
     ):
+        """Log and save the results of a task.
+
+        This method logs the provided `markdown_text`, updates the status of the task in the
+        `ai_task_results` configuration, and saves the configuration to a file. It also logs the
+        buddy's name, the status in uppercase, the performance grade, and the target percentage.
+
+        Args:
+            logger: The logger instance used for logging.
+            buddy_name (str): The name of the buddy.
+            status (str): The status of the task ('complete' or 'failed').
+            markdown_text (str): The markdown text to be logged.
+            config: The configuration instance.
+            i (int): The index of the task.
+            performance_grade (float): The performance grade of the buddy.
+            target_percentage (float): The target percentage for the task.
+            CFG: The configuration constant.
+
+        Returns:
+            None
+        """
         logger.log_markdown(markdown_text)
         config.ai_task_results[i]["status"] = status
         config.save(CFG.boss_settings_file)
@@ -514,6 +659,23 @@ Please also provide a detailed explanation for your rating and, if applicable, s
     def build_assistant_reply(
         self, status, i, task, buddy_name, performance_grade, target_percentage
     ):
+        """Build the assistant's reply based on task completion status.
+
+        This method builds the assistant's reply based on the provided status, task details,
+        buddy's name, performance grade, and target percentage. It constructs the 'thoughts'
+        and 'command' sections of the assistant's reply JSON.
+
+        Args:
+            status (str): The status of the task ('complete' or 'failed').
+            i (int): The index of the task.
+            task (str): The task description.
+            buddy_name (str): The name of the buddy.
+            performance_grade (float): The performance grade of the buddy.
+            target_percentage (float): The target percentage for the task.
+
+        Returns:
+            dict: The assistant's reply JSON containing the 'thoughts' and 'command' sections.
+        """
         base_text = f"Task {i} {task} has "
         base_reason = f"The worker "
         if status == "complete":
@@ -546,14 +708,54 @@ Please also provide a detailed explanation for your rating and, if applicable, s
         }
 
     def handle_command_error(self, command_name, arguments):
+        """Handle an error thrown by a command.
+
+        This method is called when a command throws an error. It returns a formatted error message
+        containing the name of the command and the error arguments.
+
+        Args:
+            command_name (str): The name of the command that threw the error.
+            arguments (str): The error arguments.
+
+        Returns:
+            str: The formatted error message.
+        """
         return f"Command {command_name} threw the following error: {arguments}"
 
     def handle_human_feedback(self, user_input):
+        """Handle human feedback.
+
+        This method is called when the user provides feedback. It returns a formatted message
+        containing the user's feedback.
+
+        Args:
+            user_input (str): The user's feedback.
+
+        Returns:
+            str: The formatted message containing the user's feedback.
+        """
         return f"Human feedback: {user_input}"
 
     def execute_command(
         self, command_name, arguments, cfg, command_registry, config, prompt_generator
     ):
+        """Execute a command.
+
+        This method executes a command by calling the `execute_boss_command` function with the
+        provided command name, arguments, command registry, configuration, and prompt generator.
+        It also calls the pre and post command methods of the registered plugins, if applicable.
+
+        Args:
+            command_name (str): The name of the command to execute.
+            arguments (dict): The arguments of the command.
+            cfg: The configuration constant.
+            command_registry: The command registry instance.
+            config: The configuration instance.
+            prompt_generator: The prompt generator instance.
+
+        Returns:
+            str: The result of the command execution.
+        """
         for plugin in cfg.plugins:
             if not plugin.can_handle_pre_command():
                 continue
@@ -583,6 +785,26 @@ Please also provide a detailed explanation for your rating and, if applicable, s
         config,
         prompt_generator,
     ):
+        """Handle the execution of a command.
+
+        This method handles the execution of a command based on the provided command name, arguments,
+        user input, configuration, command registry, and prompt generator. It calls the appropriate
+        methods based on the command name to handle errors, human feedback, or execute a command.
+        It also checks if the `next_action_count` in the configuration is greater than 0 and decrements
+        it if applicable.
+
+        Args:
+            command_name (str): The name of the command to execute.
+            arguments (dict): The arguments of the command.
+            user_input (str): The user's input.
+            cfg: The configuration constant.
+            command_registry: The command registry instance.
+            config: The configuration instance.
+            prompt_generator: The prompt generator instance.
+
+        Returns:
+            str: The result of the command execution.
+        """
         if command_name is not None and command_name.lower().startswith("error"):
             result = self.handle_command_error(command_name, arguments)
         elif command_name == "human_feedback":
@@ -596,6 +818,18 @@ Please also provide a detailed explanation for your rating and, if applicable, s
         return result
 
     def print_next_action(self, command_name, arguments):
+        """Print the next action to be performed.
+
+        This method prints the next action to be performed, which includes the command name and arguments.
+        It sends a chat message to the user and logs the next action using the logger.
+
+        Args:
+            command_name (str): The name of the next command.
+            arguments (dict): The arguments of the next command.
+
+        Returns:
+            None
+        """
         send_chat_message_to_user(
             "NEXT ACTION: \n " + f"COMMAND = {command_name} \n "
             f"ARGUMENTS = {arguments}"
@@ -608,6 +842,22 @@ Please also provide a detailed explanation for your rating and, if applicable, s
         )
 
     def handle_console_input(self, console_input, assistant_reply_json, cfg):
+        """Handle input from the console.
+
+        This method handles the input from the console based on the provided console input,
+        assistant reply JSON, and configuration. It checks for specific console inputs such as
+        authorization key, self-feedback request, empty input, next action count modification,
+        exit key, or other user input. It performs the corresponding actions based on the console
+        input and returns the appropriate response.
+
+        Args:
+            console_input (str): The input from the console.
+            assistant_reply_json (dict): The JSON response from the assistant.
+            cfg: The configuration constant.
+
+        Returns:
+            str: The response based on the console input.
+        """
         if console_input.lower().strip() == cfg.authorise_key:
             return "GENERATE NEXT COMMAND JSON"
         elif console_input.lower().strip() == "s":

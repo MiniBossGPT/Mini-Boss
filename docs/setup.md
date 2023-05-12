@@ -113,7 +113,7 @@ Get your OpenAI API key from: [https://platform.openai.com/account/api-keys](htt
     be hidden by default in some operating systems due to the dot prefix. To reveal
     hidden files, follow the instructions for your specific operating system:
     [Windows][show hidden files/Windows], [macOS][show hidden files/macOS].
-2. Either run `./setup.sh` or create a copy of `.env.template` and call it `.env`;
+2. Either run `./run_scripts/setup.sh` or create a copy of `.env.template` and call it `.env`;
     if you're already in a command prompt/terminal window: `cp auto-gpt/.env.template auto-gpt/.env`.
 3. Open the `.env` file in both the top level directoy and the sub directory in a text editor.
 4. Find the line that says `OPENAI_API_KEY=`.
@@ -171,7 +171,7 @@ docker run -it --env-file=.env -v $PWD:/app --rm mini-boss --gpt3only --continuo
 
 2. Open command palette with ++f1++ and type `Dev Containers: Open Folder in Container`.
 
-3. Run `./run.sh`.
+3. Run `./run_scripts/run.sh`.
 
 
 ### Run without Docker
@@ -182,12 +182,12 @@ packages and launch Mini-Boss.
 - On Linux/MacOS:
 
         :::shell
-        ./run.sh
+        ./run_scripts/run.sh
 
 - On Windows:
 
         :::shell
-        .\run.bat
+        .\run_scripts\run.bat
 
 If this gives errors, make sure you have a compatible Python version installed. See also
 the [requirements](./installation.md#requirements).

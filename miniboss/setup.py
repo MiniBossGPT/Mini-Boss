@@ -1,11 +1,12 @@
-"""Set up the AI and its goals"""
+"""
+The `setup_ai.py` module is responsible for setting up the MiniBoss and defining its goals.
+"""
 import re
 
 from colorama import Fore, Style
 
 from miniboss import utils
 from miniboss.config import Config
-from miniboss.config.autogpt_config import AutoGPTConfig
 from miniboss.config.boss_config import BossConfig
 from miniboss.config.buddy_config import BuddyConfig
 from miniboss.llm import create_chat_completion
@@ -17,14 +18,19 @@ from datetime import date
 
 
 def print_todays_date():
+    """Prints today's date.
+
+    Returns:
+        date: The current date.
+    """
     return date.today()
 
 
 def prompt_user() -> BossConfig:
-    """Prompt the user for input
+    """Prompt the user for input and generate a BossConfig object.
 
     Returns:
-        BossConfig: The BossConfig object tailored to the user's input
+        BossConfig: The BossConfig object tailored to the user's input.
     """
     user_desire = utils.clean_input(
         f"{Fore.LIGHTBLUE_EX}I want Mini-Boss to{Style.RESET_ALL}: "
@@ -47,6 +53,16 @@ def prompt_user() -> BossConfig:
 
 
 def prompt_buddy(user_desire=str, target_percentage=float, name=str) -> BuddyConfig:
+    """Prompt the user for input and generate a BuddyConfig object.
+
+    Args:
+        user_desire (str): The user's desired task.
+        target_percentage (float): The target performance grade.
+        name (str): The name of the buddy.
+
+    Returns:
+        BuddyConfig: The BuddyConfig object tailored to the user's input.
+    """
     return generate_aiconfig_automatic_buddy_gpt(user_desire, target_percentage, name)
 
 
@@ -140,10 +156,13 @@ def generate_aiconfig_manual() -> BossConfig:
 
 
 def generate_aiconfig_automatic(user_prompt) -> BossConfig:
-    """Generates an BossConfig object from the given string.
+    """Generates a BossConfig object from the given string.
+
+    Args:
+        user_prompt (str): The user's task prompt.
 
     Returns:
-    BossConfig: The BossConfig object tailored to the user's input
+        BossConfig: The BossConfig object tailored to the user's input.
     """
 
     system_prompt = f"""Your task is to act as the MiniBoss, an orchestrator of sub-tasks. Your role involves developing a detailed working plan to accomplish the main goal provided by the user.
@@ -205,14 +224,18 @@ def generate_aiconfig_automatic(user_prompt) -> BossConfig:
     return BossConfig(ai_name, ai_role, user_prompt, api_budget, ai_tasks)
 
 
-# todo: this is for the auto-=gpt task
 def generate_aiconfig_automatic_buddy_gpt(
     user_prompt, target_percentage, name
 ) -> BuddyConfig:
-    """Generates an BossConfig object from the given string.
+    """Generates a BuddyConfig object from the given string.
+
+    Args:
+        user_prompt (str): The user's task prompt.
+        target_percentage (float): The target performance percentage.
+        name (str): The name of the buddy.
 
     Returns:
-    BossConfig: The BossConfig object tailored to the user's input
+        BuddyConfig: The BuddyConfig object tailored to the user's input.
     """
 
     system_prompt = f"""

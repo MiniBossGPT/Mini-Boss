@@ -27,6 +27,12 @@ from miniboss.config import Config
 
 
 def send_chat_message_to_user(report: str):
+    """
+    Sends a chat message to the user.
+
+    Args:
+        report (str): The message to send to the user.
+    """
     cfg = Config()
     if not cfg.chat_messages_enabled:
         return
@@ -39,6 +45,16 @@ def send_chat_message_to_user(report: str):
 
 
 def clean_input(prompt: str = "", talk=False):
+    """
+    Cleans the user input and handles user interaction.
+
+    Args:
+        prompt (str): The input prompt.
+        talk (bool): Flag indicating whether to enable user interaction.
+
+    Returns:
+        str: The cleaned user input.
+    """
     try:
         cfg = Config()
         if cfg.chat_messages_enabled:
@@ -84,6 +100,15 @@ def clean_input(prompt: str = "", talk=False):
 
 
 def validate_yaml_file(file: str):
+    """
+    Validates a YAML file.
+
+    Args:
+        file (str): The path to the YAML file.
+
+    Returns:
+        tuple: A tuple containing the validation result (True/False) and the validation message.
+    """
     try:
         with open(file, encoding="utf-8") as fp:
             yaml.load(fp.read(), Loader=yaml.FullLoader)
@@ -99,10 +124,15 @@ def validate_yaml_file(file: str):
 
 
 def readable_file_size(size, decimal_places=2):
-    """Converts the given size in bytes to a readable format.
+    """
+    Converts the given size in bytes to a readable format.
+
     Args:
-        size: Size in bytes
-        decimal_places (int): Number of decimal places to display
+        size: Size in bytes.
+        decimal_places (int): Number of decimal places to display.
+
+    Returns:
+        str: The readable file size.
     """
     for unit in ["B", "KB", "MB", "GB", "TB"]:
         if size < 1024.0:
@@ -112,6 +142,12 @@ def readable_file_size(size, decimal_places=2):
 
 
 def get_bulletin_from_web():
+    """
+    Retrieves the bulletin from the web.
+
+    Returns:
+        str: The retrieved bulletin text.
+    """
     try:
         response = requests.get(
             "https://raw.githubusercontent.com/MiniBossGPT/Mini-Boss/main/BULLETIN.md"
@@ -125,6 +161,12 @@ def get_bulletin_from_web():
 
 
 def get_current_git_branch() -> str:
+    """
+    Retrieves the current git branch.
+
+    Returns:
+        str: The name of the current git branch.
+    """
     try:
         repo = Repo(search_parent_directories=True)
         branch = repo.active_branch
@@ -134,6 +176,12 @@ def get_current_git_branch() -> str:
 
 
 def get_latest_bulletin() -> str:
+    """
+    Retrieves the latest bulletin.
+
+    Returns:
+        str: The latest bulletin text.
+    """
     exists = os.path.exists("CURRENT_BULLETIN.md")
     current_bulletin = ""
     if exists:
@@ -148,6 +196,12 @@ def get_latest_bulletin() -> str:
 
 
 def get_latest_markdown() -> str:
+    """
+    Retrieves the latest markdown content.
+
+    Returns:
+        str: The latest markdown content.
+    """
     exists = os.path.exists("CURRENT_BULLETIN.md")
     current_bulletin = ""
     if exists:
@@ -167,6 +221,15 @@ def get_latest_markdown() -> str:
 
 
 def parse_auto_gpt_logs(target_directory):
+    """
+    Parses the logs of the AutoGPT task.
+
+    Args:
+        target_directory (str): The path to the target directory.
+
+    Returns:
+        str: The parsed reason for task completion.
+    """
     # Define the log file path
     log_file_path = os.path.join(target_directory, "logs/activity.log")
     # Read the log file in reverse
@@ -197,6 +260,12 @@ def parse_auto_gpt_logs(target_directory):
 
 
 def check_news_updates(cfg):
+    """
+    Checks for news updates and displays the latest news.
+
+    Args:
+        cfg: The configuration object.
+    """
     if not cfg.skip_news:
         motd = get_latest_markdown()
         if motd:
@@ -204,6 +273,9 @@ def check_news_updates(cfg):
 
 
 def display_latest_news():
+    """
+    Displays the latest news.
+    """
     markdown_file = Path("CURRENT_BULLETIN.md")
     content = markdown_file.read_text()
     markdown_content = Markdown(content)
@@ -211,11 +283,17 @@ def display_latest_news():
 
 
 def log_warnings():
+    """
+    Logs warnings related to the current environment.
+    """
     check_git_branch()
     check_python_version()
 
 
 def check_git_branch():
+    """
+    Checks the current git branch and logs a warning if it is not a supported branch.
+    """
     git_branch = get_current_git_branch()
     if git_branch and git_branch not in ["stable", "main"]:
         logger.typewriter_log(
@@ -226,6 +304,9 @@ def check_git_branch():
 
 
 def check_python_version():
+    """
+    Checks the Python version and logs a warning if it is an older version.
+    """
     if sys.version_info < (3, 10):
         logger.typewriter_log(
             "WARNING: ",
@@ -236,6 +317,16 @@ def check_python_version():
 
 
 def setup_workspace(cfg, workspace_directory):
+    """
+    Sets up the workspace directory.
+
+    Args:
+        cfg: The configuration object.
+        workspace_directory (str): The path to the workspace directory.
+
+    Returns:
+        str: The path to the created workspace directory.
+    """
     if workspace_directory is None:
         workspace_directory = Path(__file__).parent.parent / "miniboss_workspace"
     else:
@@ -246,6 +337,13 @@ def setup_workspace(cfg, workspace_directory):
 
 
 def setup_file_logger(cfg, workspace_directory):
+    """
+    Sets up the file logger.
+
+    Args:
+        cfg: The configuration object.
+        workspace_directory (str): The path to the workspace directory.
+    """
     file_logger_path = workspace_directory / "file_logger.txt"
     if not file_logger_path.exists():
         with file_logger_path.open(mode="w", encoding="utf-8") as f:
@@ -254,6 +352,15 @@ def setup_file_logger(cfg, workspace_directory):
 
 
 def setup_plugins_and_commands(cfg):
+    """
+    Sets up the plugins and commands.
+
+    Args:
+        cfg: The configuration object.
+
+    Returns:
+        CommandRegistry: The command registry.
+    """
     cfg.set_plugins(scan_plugins(cfg, cfg.debug_mode))
     command_registry = CommandRegistry()
     command_registry.import_commands("miniboss.app")
