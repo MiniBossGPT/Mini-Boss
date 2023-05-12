@@ -18,7 +18,7 @@ Mini-Boss is an innovative open-source project that harnesses the power of the G
 
 
 <p align="center">
-  <img src="https://raw.githubusercontent.com/MiniBossGPT/Mini-Boss/master/console_example_3.png" width="90%" height="90%">
+  <img src="https://raw.githubusercontent.com/MiniBossGPT/Mini-Boss/master/images/console_example_3.png" width="90%" height="90%">
 </p>
 
 
@@ -26,7 +26,7 @@ Mini-Boss is an innovative open-source project that harnesses the power of the G
 
 
 <p align="center">
-  <img src="https://raw.githubusercontent.com/MiniBossGPT/Mini-Boss/master/console_example_2.png" width="90%" height="90%">
+  <img src="https://raw.githubusercontent.com/MiniBossGPT/Mini-Boss/master/images/console_example_2.png" width="90%" height="90%">
 </p>
 
 
@@ -34,7 +34,7 @@ Mini-Boss is an innovative open-source project that harnesses the power of the G
 
 
 <p align="center">
-  <img src="https://raw.githubusercontent.com/MiniBossGPT/Mini-Boss/master/console_example.png" width="90%" height="90%">
+  <img src="https://raw.githubusercontent.com/MiniBossGPT/Mini-Boss/master/images/console_example.png" width="90%" height="90%">
 </p>
 
 

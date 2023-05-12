@@ -12,23 +12,37 @@ class BossManager(metaclass=Singleton):
     """Agent manager for managing GPT boss"""
 
     def __init__(self):
+        """Initialize the BossManager object.
+
+        The BossManager class is responsible for managing GPT bosses.
+        It initializes the internal variables to keep track of the bosses.
+
+        Args:
+            None
+
+        Returns:
+            None
+        """
         self.next_key = 0
         self.boss = {}  # key, (task, full_message_history, model)
         self.cfg = Config()
 
-    # Create new GPT boss
-    # TODO: Centralise use of create_chat_completion() to globally enforce token limit
-
     def create_boss(self, task: str, prompt: str, model: str) -> tuple[int, str]:
-        """Create a new boss and return its key
+        """Create a new boss and return its key.
+
+        This method creates a new GPT boss using the provided task, prompt, and model.
+        It generates a conversation history with the user's prompt and interacts with the boss model
+        using the `create_chat_completion` function. The generated response from the boss is stored
+        in the conversation history. The method also allows plugins to modify the conversation history
+        before and after interacting with the boss.
 
         Args:
-            task: The task to perform
-            prompt: The prompt to use
-            model: The model to use
+            task (str): The task to perform.
+            prompt (str): The prompt to use.
+            model (str): The model to use.
 
         Returns:
-            The key of the new boss
+            tuple[int, str]: The key of the new boss and the boss's response.
         """
         messages: List[Message] = [
             {"role": "user", "content": prompt},
@@ -71,14 +85,20 @@ class BossManager(metaclass=Singleton):
         return key, boss_reply
 
     def message_boss(self, key: str | int, message: str) -> str:
-        """Send a message to an boss and return its response
+        """Send a message to a boss and return its response.
+
+        This method sends a message to an existing boss identified by the provided key.
+        It retrieves the boss's task, full message history, and model. The user message is
+        added to the message history, and plugins have the opportunity to modify the history.
+        The message history is then used to interact with the boss model and generate a response.
+        Plugins are applied to the response before and after interacting with the boss.
 
         Args:
-            key: The key of the boss to message
-            message: The message to send to the boss
+            key (str | int): The key of the boss to message.
+            message (str): The message to send to the boss.
 
         Returns:
-            The boss's response
+            str: The response from the boss.
         """
         task, messages, model = self.boss[int(key)]
 
@@ -119,23 +139,29 @@ class BossManager(metaclass=Singleton):
         return boss_reply
 
     def list_bosss(self) -> list[tuple[str | int, str]]:
-        """Return a list of all boss
+        """Return a list of all bosses.
+
+        This method returns a list of tuples representing all the bosses
+        managed by the BossManager. Each tuple contains the boss's key and task.
 
         Returns:
-            A list of tuples of the form (key, task)
+            list[tuple[str | int, str]]: A list of tuples of the form (key, task).
         """
 
-        # Return a list of boss keys and their tasks
         return [(key, task) for key, (task, _, _) in self.boss.items()]
 
     def delete_boss(self, key: str | int) -> bool:
-        """Delete an boss from the boss manager
+        """Delete a boss from the boss manager.
+
+        This method deletes a boss from the BossManager based on the provided key.
+        If the boss exists, it is removed from the boss manager. Otherwise, if the key
+        does not exist, nothing happens.
 
         Args:
-            key: The key of the boss to delete
+            key (str | int): The key of the boss to delete.
 
         Returns:
-            True if successful, False otherwise
+            bool: True if the deletion was successful, False otherwise.
         """
 
         try:

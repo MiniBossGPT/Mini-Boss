@@ -9,26 +9,44 @@ from miniboss.singleton import Singleton
 
 
 class BuddyManager(metaclass=Singleton):
-    """Agent manager for managing GPT buddys"""
+    """Agent manager for managing GPT buddies.
+
+    This class provides methods for creating, messaging, listing, and deleting GPT buddies.
+    Each buddy is associated with a unique key and stores its task, full message history, and model.
+
+    Attributes:
+        next_key (int): The next available key for a new buddy.
+        buddies (dict): A dictionary storing the buddies, where the key is the buddy's key
+            and the value is a tuple containing the buddy's task, full message history, and model.
+        cfg (Config): The configuration object.
+
+    Methods:
+        create_buddy: Create a new buddy and return its key.
+        message_buddy: Send a message to a buddy and return its response.
+        list_buddies: Return a list of all buddies.
+        delete_buddy: Delete a buddy from the buddy manager.
+    """
 
     def __init__(self):
+        """Initialize the BuddyManager."""
         self.next_key = 0
         self.buddys = {}  # key, (task, full_message_history, model)
         self.cfg = Config()
 
-    # Create new GPT buddy
-    # TODO: Centralise use of create_chat_completion() to globally enforce token limit
-
     def create_buddy(self, task: str, prompt: str, model: str) -> tuple[int, str]:
-        """Create a new buddy and return its key
+        """Create a new buddy and return its key.
+
+        This method creates a new buddy with the provided task, prompt, and model.
+        It generates a key for the buddy, initializes the message history, and starts
+        the GPT instance. The buddy's initial reply is returned.
 
         Args:
-            task: The task to perform
-            prompt: The prompt to use
-            model: The model to use
+            task (str): The task to perform.
+            prompt (str): The prompt to use.
+            model (str): The model to use.
 
         Returns:
-            The key of the new buddy
+            tuple[int, str]: A tuple containing the key of the new buddy and its initial reply.
         """
         messages: List[Message] = [
             {"role": "user", "content": prompt},
@@ -71,14 +89,18 @@ class BuddyManager(metaclass=Singleton):
         return key, buddy_reply
 
     def message_buddy(self, key: str | int, message: str) -> str:
-        """Send a message to an buddy and return its response
+        """Send a message to a buddy and return its response.
+
+        This method sends a message to the buddy with the specified key.
+        It appends the user message to the message history, starts the GPT instance,
+        and returns the buddy's response.
 
         Args:
-            key: The key of the buddy to message
-            message: The message to send to the buddy
+            key (str | int): The key of the buddy to message.
+            message (str): The message to send to the buddy.
 
         Returns:
-            The buddy's response
+            str: The buddy's response.
         """
         task, messages, model = self.buddys[int(key)]
 
@@ -119,27 +141,26 @@ class BuddyManager(metaclass=Singleton):
         return buddy_reply
 
     def list_buddys(self) -> list[tuple[str | int, str]]:
-        """Return a list of all buddys
+        """Return a list of all buddies.
 
         Returns:
-            A list of tuples of the form (key, task)
+            list[tuple[str | int, str]]: A list of tuples containing the key and task of each buddy.
         """
 
-        # Return a list of buddy keys and their tasks
         return [(key, task) for key, (task, _, _) in self.buddys.items()]
 
     def delete_buddy(self, key: str | int) -> bool:
-        """Delete an buddy from the buddy manager
+        """Delete a buddy from the buddy manager.
 
         Args:
-            key: The key of the buddy to delete
+            key (str | int): The key of the buddy to delete.
 
         Returns:
-            True if successful, False otherwise
+            bool: True if the buddy was successfully deleted, False otherwise.
         """
 
         try:
-            del self.buddys[int(key)]
+            del self.buddies[int(key)]
             return True
         except KeyError:
             return False

@@ -9,7 +9,7 @@ class Spinner:
     """A simple spinner class"""
 
     def __init__(self, message: str = "Loading...", delay: float = 0.1) -> None:
-        """Initialize the spinner class
+        """Initialize the spinner class.
 
         Args:
             message (str): The message to display.
@@ -38,7 +38,7 @@ class Spinner:
         return self
 
     def __exit__(self, exc_type, exc_value, exc_traceback) -> None:
-        """Stop the spinner
+        """Stop the spinner.
 
         Args:
             exc_type (Exception): The exception type.
@@ -52,7 +52,8 @@ class Spinner:
         sys.stdout.flush()
 
     def update_message(self, new_message, delay=0.1):
-        """Update the spinner message
+        """Update the spinner message.
+
         Args:
             new_message (str): New message to display.
             delay (float): The delay in seconds between each spinner update.
