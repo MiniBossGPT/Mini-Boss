@@ -8,12 +8,7 @@ from miniboss.llm.base import (
     Message,
     ModelInfo,
 )
-from miniboss.llm.chat import (
-    buddy_chat_with_ai,
-    chat_with_ai,
-    create_chat_message,
-    generate_context,
-)
+from miniboss.llm.chat import buddy_chat_with_ai, create_chat_message, generate_context
 from miniboss.llm.llm_utils import (
     call_ai_function,
     chunked_tokens,
@@ -34,7 +29,6 @@ __all__ = [
     "EmbeddingModelResponse",
     "create_chat_message",
     "generate_context",
-    "chat_with_ai",
     "buddy_chat_with_ai",
     "call_ai_function",
     "create_chat_completion",

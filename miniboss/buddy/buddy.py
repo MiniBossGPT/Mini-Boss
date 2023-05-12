@@ -5,126 +5,13 @@ from colorama import Fore, Style
 
 from miniboss.buddy_app import execute_buddy_command, get_buddy_command
 from miniboss.config import Config
-from miniboss.json_utils.json_fix_llm import fix_json_using_multiple_techniques
 from miniboss.json_utils.utilities import LLM_DEFAULT_RESPONSE_FORMAT, validate_json
-from miniboss.llm import (
-    buddy_chat_with_ai,
-    chat_with_ai,
-    create_chat_completion,
-    create_chat_message,
-)
-from miniboss.llm.token_counter import count_string_tokens
-from miniboss.logs import logger, print_buddy_thoughts
-
-# from miniboss import say_text
-from miniboss.spinner import Spinner
-from miniboss.utils import clean_input, send_chat_message_to_user
+from miniboss.llm import create_chat_completion, create_chat_message
+from miniboss.logs import logger
+from miniboss.utils import clean_input, parse_auto_gpt_logs, send_chat_message_to_user
 from miniboss.workspace import Jobspace
 
-"""Execute code in a Docker container"""
-import ast
-import re
-import subprocess
-import sys
-from pathlib import Path
-
-import docker
-from docker.errors import ImageNotFound
-
-from miniboss.config import Config
-
 CFG = Config()
-
-
-def we_are_running_in_a_docker_container() -> bool:
-    """Check if we are running in a Docker container
-
-    Returns:
-        bool: True if we are running in a Docker container, False otherwise
-    """
-    return os.path.exists("/.dockerenv")
-
-
-def execute_auto_gpt():
-    try:
-        client = docker.from_env()
-        image_name = "significantgravitas/auto-gpt:latest"
-        try:
-            client.images.get(image_name)
-            print(f"Image '{image_name}' found locally")
-        except ImageNotFound:
-            print(f"Image '{image_name}' not found locally, pulling from Docker Hub")
-            low_level_client = docker.APIClient()
-            for line in low_level_client.pull(image_name, stream=True, decode=True):
-                status = line.get("status")
-                progress = line.get("progress")
-                if status and progress:
-                    print(f"{status}: {progress}")
-                elif status:
-                    print(status)
-
-        env_file = ".env"
-        with open(env_file) as f:
-            env_vars = {
-                line.strip().split("=")[0]: line.strip().split("=")[1]
-                for line in f
-                if line.strip()
-            }
-
-        container = client.containers.run(
-            image_name,
-            ["auto-gpt", "--gpt3only", "--continuous"],
-            volumes={
-                os.path.abspath(os.getcwd()): {
-                    "bind": "/workspace",
-                    "mode": "rw",
-                }
-            },
-            working_dir="/app",
-            environment=env_vars,
-            stderr=True,
-            stdout=True,
-            detach=True,
-            auto_remove=True,
-        )
-
-        container.wait()
-        logs = container.logs().decode("utf-8")
-        container.remove()
-        return logs
-
-    except Exception as e:
-        return f"Error: {str(e)}"
-
-
-def parse_auto_gpt_logs(target_directory):
-    # Define the log file path
-    log_file_path = os.path.join(target_directory, "logs/activity.log")
-    # Read the log file in reverse
-    with open(log_file_path, "r", encoding="utf-8") as log_file:
-        lines = log_file.readlines()
-        lines.reverse()
-    # Define a regular expression pattern to match the "task_complete" command and its arguments
-    pattern = r"COMMAND = task_complete\s+ARGUMENTS = ({.*})"
-    # Search for the pattern in the reversed log content
-    reason = ""
-    for line in lines:
-        match = re.search(pattern, line)
-        if match:
-            arguments_str = match.group(1)
-            # Parse the string to a Python dictionary
-            arguments = ast.literal_eval(arguments_str)
-            # Access the 'reason' value
-            pre_reason = arguments["reason"]
-            # Remove single and double quotes
-            reason = pre_reason.strip("'\"").replace("'", "")
-            # Print the 'reason' value
-            # print(f"Task complete Reason: {reason}")
-            return reason
-    else:
-        # make this an error
-        # print("Task complete command not found in the log file.")
-        return reason
 
 
 class Buddy:
@@ -234,15 +121,7 @@ class Buddy:
                 # # todo: plug in all of the options here
                 # # command = ["python3", "-m", "autogpt", "--gpt3only", "--continuous", "-C", buddy_settings,"-m", "local"]
                 # # command = ["python3", "-m", "autogpt", "--gpt3only", "-C", buddy_settings,"-m", "local"]
-                command = [
-                    "python3",
-                    "-m",
-                    "autogpt",
-                    "-C",
-                    buddy_settings,
-                    "-m",
-                    "local",
-                ]
+                command = ["python3", "-m", "autogpt", "-C", buddy_settings]
 
                 ##############################################
                 # to test completetion loop disable this block
@@ -297,23 +176,10 @@ class Buddy:
                 except Exception as e:
                     logger.error("Error: \n", str(e))
 
+            # Your main function
             if not cfg.continuous_mode and self.next_action_count == 0:
-                # ### GET USER AUTHORIZATION TO EXECUTE COMMAND ###
-                # Get key press: Prompt the user to press enter to continue or escape
-                # to exit
                 self.user_input = ""
-                send_chat_message_to_user(
-                    "NEXT ACTION: \n " + f"COMMAND = {command_name} \n "
-                    f"ARGUMENTS = {arguments}"
-                )
-                logger.typewriter_log(
-                    "NEXT ACTION: ",
-                    Fore.CYAN,
-                    f"COMMAND = {Fore.CYAN}{command_name}{Style.RESET_ALL}  "
-                    f"ARGUMENTS = {Fore.CYAN}{arguments}{Style.RESET_ALL}",
-                )
-                # todo: later, automate this step when a buddy is complete
-                # console_input = "y"
+                self.print_next_action(command_name, arguments)
                 print(
                     f"{self.ai_name}..."
                     "Enter 'y' to authorise command, 'y -N' to run N continuous commands, 's' to run self-feedback commands"
@@ -321,133 +187,24 @@ class Buddy:
                     flush=True,
                 )
                 while True:
-                    console_input = ""
-                    if cfg.chat_messages_enabled:
-                        console_input = clean_input("Waiting for your response...")
-                    else:
-                        console_input = clean_input(
-                            Fore.MAGENTA + "Input:" + Style.RESET_ALL
-                        )
-                    if console_input.lower().strip() == cfg.authorise_key:
-                        user_input = "GENERATE NEXT COMMAND JSON"
+                    console_input = self.get_console_input(cfg)
+                    user_input, command_name = self.process_console_input(
+                        console_input, cfg, assistant_reply_json
+                    )
+                    if user_input is not None:
                         break
-                    elif console_input.lower().strip() == "s":
-                        logger.typewriter_log(
-                            "-=-=-=-=-=-=-= THOUGHTS, REASONING, PLAN AND CRITICISM WILL NOW BE VERIFIED BY AGENT -=-=-=-=-=-=-=",
-                            Fore.GREEN,
-                            "",
-                        )
-                        thoughts = assistant_reply_json.get("thoughts", {})
-                        self_feedback_resp = self.get_self_feedback(
-                            thoughts, cfg.fast_llm_model
-                        )
-                        logger.typewriter_log(
-                            f"SELF FEEDBACK: {self_feedback_resp}",
-                            Fore.YELLOW,
-                            "",
-                        )
-                        if self_feedback_resp[0].lower().strip() == cfg.authorise_key:
-                            user_input = "GENERATE NEXT COMMAND JSON"
-                        else:
-                            user_input = self_feedback_resp
-                        break
-                    elif console_input.lower().strip() == "":
-                        print("Invalid input format.")
-                        continue
-                    elif console_input.lower().startswith(f"{cfg.authorise_key} -"):
-                        try:
-                            self.next_action_count = abs(
-                                int(console_input.split(" ")[1])
-                            )
-                            user_input = "GENERATE NEXT COMMAND JSON"
-                        except ValueError:
-                            print(
-                                f"Invalid input format. Please enter '{cfg.authorise_key} -N' where N is"
-                                " the number of continuous tasks."
-                            )
-                            continue
-                        break
-                    elif console_input.lower() == cfg.exit_key:
-                        user_input = "EXIT"
-                        break
-                    else:
-                        user_input = console_input
-                        command_name = "human_feedback"
-                        break
-
-                # if user_input == "GENERATE NEXT COMMAND JSON":
-                # logger.typewriter_log(
-                #     "-=-=-=-=-=-=-= COMMAND AUTHORISED BY USER -=-=-=-=-=-=-=",
-                #     Fore.MAGENTA,
-                #     "",
-                # )
                 if user_input == "EXIT":
                     send_chat_message_to_user("Exiting...")
                     print("Exiting...", flush=True)
-                    break
             else:
-                # Print command
-                send_chat_message_to_user(
-                    "NEXT ACTION: \n " + f"COMMAND = {command_name} \n "
-                    f"ARGUMENTS = {arguments}"
-                )
-
-                logger.typewriter_log(
-                    "NEXT ACTION: ",
-                    Fore.CYAN,
-                    f"COMMAND = {Fore.CYAN}{command_name}{Style.RESET_ALL}"
-                    f"  ARGUMENTS = {Fore.CYAN}{arguments}{Style.RESET_ALL}",
-                )
+                self.print_next_action(command_name, arguments)
 
             # Execute command
-            if command_name is not None and command_name.lower().startswith("error"):
-                result = (
-                    f"Command {command_name} threw the following error: {arguments}"
-                )
-            elif command_name == "human_feedback":
-                result = f"Human feedback: {user_input}"
-            else:
-                for plugin in cfg.plugins:
-                    if not plugin.can_handle_pre_command():
-                        continue
-                    command_name, arguments = plugin.pre_command(
-                        command_name, arguments
-                    )
-                command_result = execute_buddy_command(
-                    self.command_registry,
-                    command_name,
-                    arguments,
-                    self.config.prompt_generator,
-                )
-
-                result = f"Command {command_name} returned: " f"{command_result}"
-
-                for plugin in cfg.plugins:
-                    if not plugin.can_handle_post_command():
-                        continue
-                    result = plugin.post_command(command_name, result)
-                if self.next_action_count > 0:
-                    self.next_action_count -= 1
-
-            if result is not None:
-                self.full_message_history.append(create_chat_message("system", result))
-                # logger.typewriter_log("SYSTEM: ", Fore.YELLOW, result)
-                logger.typewriter_log("", Fore.GREEN, "\n")
-                if command_name == "task_complete":
-                    self.final_result = {
-                        "command": command_name,
-                        "arguments": reason,
-                        "task": self.current_job,
-                        "feedback": self_feedback_resp or {},
-                    }
-                    break
-            else:
-                self.full_message_history.append(
-                    create_chat_message("system", "Unable to execute command")
-                )
-                logger.typewriter_log(
-                    "SYSTEM: ", Fore.YELLOW, "Unable to execute command"
-                )
+            result, command_name = self.execute_command(
+                command_name, arguments, user_input, cfg
+            )
+            if self.log_result(result, command_name, self_feedback_resp, reason):
+                break
 
     def _resolve_pathlike_command_args(self, command_args):
         if "directory" in command_args and command_args["directory"] in {"", "/"}:
@@ -515,3 +272,108 @@ class Buddy:
         markdown_text = f"``` {display_feedback}```"
         logger.log_markdown(markdown_text)
         return display_feedback, assistant_reply_json
+
+    def get_console_input(self, cfg):
+        console_input = ""
+        if cfg.chat_messages_enabled:
+            console_input = clean_input("Waiting for your response...")
+        else:
+            console_input = clean_input(Fore.MAGENTA + "Input:" + Style.RESET_ALL)
+        return console_input.lower().strip()
+
+    def process_console_input(self, console_input, cfg, assistant_reply_json):
+        if console_input == cfg.authorise_key:
+            return "GENERATE NEXT COMMAND JSON", None
+        elif console_input == "s":
+            thoughts = assistant_reply_json.get("thoughts", {})
+            self_feedback_resp = self.get_self_feedback(thoughts, cfg.fast_llm_model)
+            if self_feedback_resp[0].lower().strip() == cfg.authorise_key:
+                return "GENERATE NEXT COMMAND JSON", None
+            else:
+                return self_feedback_resp, None
+        elif console_input == "":
+            print("Invalid input format.")
+            return None, None
+        elif console_input.startswith(f"{cfg.authorise_key} -"):
+            try:
+                self.next_action_count = abs(int(console_input.split(" ")[1]))
+                return "GENERATE NEXT COMMAND JSON", None
+            except ValueError:
+                print(
+                    f"Invalid input format. Please enter '{cfg.authorise_key} -N' where N is"
+                    " the number of continuous tasks."
+                )
+                return None, None
+        elif console_input == cfg.exit_key:
+            return "EXIT", None
+        else:
+            return console_input, "human_feedback"
+
+    def print_next_action(self, command_name, arguments):
+        send_chat_message_to_user(
+            "NEXT ACTION: \n " + f"COMMAND = {command_name} \n "
+            f"ARGUMENTS = {arguments}"
+        )
+        logger.typewriter_log(
+            "NEXT ACTION: ",
+            Fore.CYAN,
+            f"COMMAND = {Fore.CYAN}{command_name}{Style.RESET_ALL}  "
+            f"ARGUMENTS = {Fore.CYAN}{arguments}{Style.RESET_ALL}",
+        )
+
+    def process_plugins_pre_command(self, cfg, command_name, arguments):
+        for plugin in cfg.plugins:
+            if not plugin.can_handle_pre_command():
+                continue
+            command_name, arguments = plugin.pre_command(command_name, arguments)
+        return command_name, arguments
+
+    def process_plugins_post_command(self, cfg, command_name, result):
+        for plugin in cfg.plugins:
+            if not plugin.can_handle_post_command():
+                continue
+            result = plugin.post_command(command_name, result)
+        return result
+
+    def execute_command(self, command_name, arguments, user_input, cfg):
+        if command_name is not None and command_name.lower().startswith("error"):
+            return (
+                f"Command {command_name} threw the following error: {arguments}",
+                command_name,
+            )
+        elif command_name == "human_feedback":
+            return f"Human feedback: {user_input}", command_name
+        else:
+            command_name, arguments = self.process_plugins_pre_command(
+                cfg, command_name, arguments
+            )
+            command_result = execute_buddy_command(
+                self.command_registry,
+                command_name,
+                arguments,
+                self.config.prompt_generator,
+            )
+            result = f"Command {command_name} returned: {command_result}"
+            result = self.process_plugins_post_command(cfg, command_name, result)
+            if self.next_action_count > 0:
+                self.next_action_count -= 1
+            return result, command_name
+
+    def log_result(self, result, command_name, self_feedback_resp, reason):
+        if result is not None:
+            self.full_message_history.append(create_chat_message("system", result))
+            logger.typewriter_log("", Fore.GREEN, "\n")
+            if command_name == "task_complete":
+                self.final_result = {
+                    "command": command_name,
+                    "arguments": reason,
+                    "task": self.current_job,
+                    "feedback": self_feedback_resp or {},
+                }
+                return True
+        else:
+            self.full_message_history.append(
+                create_chat_message("system", "Unable to execute command")
+            )
+            logger.typewriter_log("SYSTEM: ", Fore.YELLOW, "Unable to execute command")
+        return False
