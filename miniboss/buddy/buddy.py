@@ -141,10 +141,10 @@ class Buddy:
                 #     print("Buddy completed work successfully.")
                 # else:
                 #     print("Buddy work failed.")
-
+                #
                 reason = parse_auto_gpt_logs(target_directory)
                 ##############################################
-                # reason = "Buddy completed work successfully."
+                # reason = 'Successfully retrieved Googles stock prices for yesterday and saved them in a format that can be easily analyzed.'
                 ##############################################
 
                 # Convert the arguments string to a dictionary
@@ -191,7 +191,7 @@ class Buddy:
                 )
                 while True:
                     console_input = self.get_console_input(cfg)
-                    user_input, command_name = self.process_console_input(
+                    user_input = self.process_console_input(
                         console_input, cfg, assistant_reply_json
                     )
                     if user_input is not None:
@@ -203,7 +203,7 @@ class Buddy:
                 self.print_next_action(command_name, arguments)
 
             # Execute command
-            result, command_name = self.execute_command(
+            result, command_name = self.execute_buddy_command(
                 command_name, arguments, user_input, cfg
             )
             if self.log_result(result, command_name, self_feedback_resp, reason):
@@ -240,7 +240,7 @@ class Buddy:
         """
         ai_role = self.current_job
         # print("ai_role", ai_role)
-        feedback_prompt = f"Below is a message from an AI buddy with the role of {ai_role}. Please review the provided Thought, Reasoning, Plan, and Criticism. If these elements accurately contribute to the successful execution of the assumed role, respond with the letter 'Y' followed by a space, and then explain why it is effective. If the provided information is not suitable for achieving the role's objectives, please provide one or more sentences addressing the issue and suggesting a resolution."
+        feedback_prompt = f"Below is a message from an AI buddy with the role of {ai_role}. Please review the provided Thought, Reasoning, Plan, and Criticism. If these elements accurately contribute to the successful execution of the assumed role, respond with the letter 'Y' followed by a space, and then explain why it is effective. If the provided information is not suitable for achieving the role's objectives, please provide one or more sentences addressing the issue and suggesting a resolution. The final work will be graded. This AI buddy needs a target score of {self.config.target_percentage} to pass. \n"
         reasoning = thoughts.get("reasoning", "")
         plan = thoughts.get("plan", "")
         thought = thoughts.get("thoughts", "")
@@ -261,12 +261,13 @@ class Buddy:
         Returns:
             Tuple[str, dict]: A tuple containing the self-feedback response and the assistant reply JSON.
         """
+        # todo: this has to be modified to evaluate the its results
         assistant_reply_json = {
             "thoughts": {
                 "text": "My task is complete",
                 "reasoning": f"I completed the assigned task : {self.current_job}",
                 "plan": f"Report to MiniBoss that I have completed the job : {self.current_job} : with the following results {reason}",
-                "criticism": f"I need to make sure I report that I completed my task : {self.current_job}",
+                "criticism": f"I need to make sure I report that I completed my task : {self.current_job} : and determine if ",
                 "speak": f"I will report that I completed my task : {self.current_job}.",
             },
             "command": {"name": "task_complete", "args": {"reason": reason}},
@@ -310,6 +311,8 @@ class Buddy:
     def process_console_input(self, console_input, cfg, assistant_reply_json):
         """Process the console input and determine the action to be taken.
 
+        This method processes the console input and determines the appropriate action to be taken based on the input.
+
         Args:
             console_input (str): The input provided from the console.
             cfg (object): The configuration object.
@@ -317,33 +320,38 @@ class Buddy:
 
         Returns:
             Tuple[str, None] or Tuple[str, str]: A tuple containing the action to be taken and the command name (if applicable).
+            The action can be one of the following:
+            - "GENERATE NEXT COMMAND JSON": The next command JSON should be generated.
+            - "EXIT": The program should exit.
+            - console_input (str): The console input itself, indicating a command to be processed.
+            - None: If the console input is invalid or does not match any predefined action.
         """
         if console_input == cfg.authorise_key:
-            return "GENERATE NEXT COMMAND JSON", None
+            return "GENERATE NEXT COMMAND JSON"
         elif console_input == "s":
             thoughts = assistant_reply_json.get("thoughts", {})
             self_feedback_resp = self.get_self_feedback(thoughts, cfg.fast_llm_model)
             if self_feedback_resp[0].lower().strip() == cfg.authorise_key:
-                return "GENERATE NEXT COMMAND JSON", None
+                return "GENERATE NEXT COMMAND JSON"
             else:
-                return self_feedback_resp, None
+                return self_feedback_resp
         elif console_input == "":
             print("Invalid input format.")
-            return None, None
+            return None
         elif console_input.startswith(f"{cfg.authorise_key} -"):
             try:
                 self.next_action_count = abs(int(console_input.split(" ")[1]))
-                return "GENERATE NEXT COMMAND JSON", None
+                return "GENERATE NEXT COMMAND JSON"
             except ValueError:
                 print(
                     f"Invalid input format. Please enter '{cfg.authorise_key} -N' where N is"
                     " the number of continuous tasks."
                 )
-                return None, None
+                return None
         elif console_input == cfg.exit_key:
-            return "EXIT", None
+            return "EXIT"
         else:
-            return console_input, "human_feedback"
+            return console_input
 
     def print_next_action(self, command_name, arguments):
         """Print the next action to be performed by the buddy.
@@ -397,7 +405,7 @@ class Buddy:
             result = plugin.post_command(command_name, result)
         return result
 
-    def execute_command(self, command_name, arguments, user_input, cfg):
+    def execute_buddy_command(self, command_name, arguments, user_input, cfg):
         """Execute a command based on the given command name and arguments.
 
         Args:
@@ -409,6 +417,8 @@ class Buddy:
         Returns:
             Tuple[str, str]: A tuple containing the result of the command execution and the command name (if applicable).
         """
+        print("Executing command: ", command_name)
+        print("With arguments: ", arguments)
         if command_name is not None and command_name.lower().startswith("error"):
             return (
                 f"Command {command_name} threw the following error: {arguments}",
