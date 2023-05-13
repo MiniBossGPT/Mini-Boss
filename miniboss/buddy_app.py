@@ -123,7 +123,7 @@ def execute_buddy_command(
         # non-file is given, return instructions "Input should be a python
         # filepath, write your code to file and try again
         elif command_name == "task_complete":
-            # print("buddy complete - proceed to next task")
+            print("buddy complete - proceed to next task")
             # shutdown()
             return command_name, arguments
         else:

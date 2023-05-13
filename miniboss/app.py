@@ -1,5 +1,6 @@
 """ Command and Control """
 import json
+import os
 from typing import Dict, List, NoReturn, Union
 
 from miniboss.boss.boss_manager import BossManager
@@ -17,6 +18,7 @@ from miniboss.url_utils.validators import validate_url
 CFG = Config()
 BUDDY_MANAGER = BuddyManager()
 BOSS_MANAGER = BossManager()
+os.environ["TF_CPP_MIN_LOG_LEVEL"] = "4"
 
 
 def is_valid_int(value: str) -> bool:

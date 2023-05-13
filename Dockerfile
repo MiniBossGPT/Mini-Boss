@@ -20,8 +20,10 @@ ENV PIP_NO_CACHE_DIR=yes \
 # Install the required python packages globally
 ENV PATH="$PATH:/root/.local/bin"
 WORKDIR /app
+RUN python -m pip install rich
 RUN git clone --recursive -b stable https://github.com/Significant-Gravitas/Auto-GPT
 COPY auto-gpt/requirements.txt .
+COPY mini-boss-requirements.txt .
 # Set the entrypoint
 ENTRYPOINT ["python", "-m", "miniboss"]
 #CMD ["/bin/bash"]
@@ -32,8 +34,9 @@ WORKDIR /app
 COPY . .
 #ONBUILD COPY auto-gpt/autogpt/ ./autogpt
 RUN pip install --no-cache-dir -r requirements.txt
+RUN pip install --no-cache-dir -r mini-boss-requirements.txt
 RUN pip install -e auto-gpt
-RUN python -m pip install rich
+
 
 
 # release build -> include bare minimum
@@ -42,6 +45,6 @@ WORKDIR /app
 COPY . .
 RUN sed -i '/Items below this point will not be included in the Docker Image/,$d' requirements.txt && \
 	pip install --no-cache-dir -r requirements.txt &&\
-    python -m pip install rich
+	pip install --no-cache-dir -r mini-boss-requirements.txt
 
 FROM miniboss-${BUILD_TYPE} AS mini-boss

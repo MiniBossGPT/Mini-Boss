@@ -26,6 +26,8 @@ import ast
 import os
 import re
 
+from transformers import pipeline
+
 
 class Boss:
     """Boss class for interacting with Mini-Boss.
@@ -260,7 +262,7 @@ class Boss:
                     # Create a new dictionary with all values from final_result
                     new_final_result = buddy.final_result.copy()
                     # Use the evaluation function to grade the worker's performance
-                    performance_grade = self.evaluate_worker_performance(feedback)
+                    performance_grade = self.evaluate_worker_performance_hf(feedback)
                     new_final_result["performance_grade"] = performance_grade
                     self.config.ai_task_results[i]["score"] = performance_grade
                     complete_precent = (i + 1) / len(self.config.ai_tasks)
@@ -439,6 +441,26 @@ class Boss:
         else:
             # if no score was found in the feedback, handle accordingly
             return 0.20
+
+    def evaluate_worker_performance_hf(self, feedback: str) -> float:
+        """Evaluate the performance of a worker based on the provided feedback using the Hugging Face sentiment analysis model.
+
+        This method calculates a performance score for a worker based on the sentiment analysis of the feedback received.
+        The score is normalized to a scale of 0-1, with 1 being the highest performance.
+
+        Args:
+            feedback (str): The feedback received for the worker's performance.
+
+        Returns:
+            float: The performance score, normalized to a scale of 0-1.
+        """
+        hf_analysis = pipeline("sentiment-analysis")(feedback)
+
+        if len(hf_analysis) > 0:
+            return hf_analysis[0]["score"]
+        else:
+            # If no score was found in the feedback, handle accordingly
+            return self.evaluate_worker_performance(feedback)
 
     def set_results_for_tasks(self):
         """Set the initial results structure for each task.
