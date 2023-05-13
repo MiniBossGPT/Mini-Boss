@@ -28,7 +28,7 @@ class Config(metaclass=Singleton):
         self.skip_reprompt = False
         self.allow_downloads = False
         self.skip_news = False
-
+        self.install_plugin_deps = False
         self.authorise_key = os.getenv("AUTHORISE_COMMAND_KEY", "y")
         self.exit_key = os.getenv("EXIT_KEY", "n")
         self.boss_settings_file = os.getenv("BOSS_SETTINGS_FILE", "boss_settings.yaml")

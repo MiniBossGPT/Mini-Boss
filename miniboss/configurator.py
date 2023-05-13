@@ -24,6 +24,7 @@ def create_config(
     browser_name: str,
     allow_downloads: bool,
     skip_news: bool,
+    install_plugin_deps: bool,
 ) -> None:
     """Updates the config object with the given arguments.
 
@@ -39,7 +40,8 @@ def create_config(
         memory_type (str): The type of memory backend to use
         browser_name (str): The name of the browser to use when using selenium to scrape the web
         allow_downloads (bool): Whether to allow Mini-Boss to download files natively
-        skips_news (bool): Whether to suppress the output of latest news on startup
+        skip_news (bool): Whether to suppress the output of latest news on startup
+        install_plugin_deps (bool): Whether to install plugin dependencies
     """
     CFG.set_debug_mode(False)
     CFG.set_continuous_mode(False)

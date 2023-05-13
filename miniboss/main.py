@@ -75,6 +75,7 @@ def run_miniboss(
         browser_name,
         allow_downloads,
         skip_news,
+        install_plugin_deps,
     )
 
     check_news_updates(cfg)
