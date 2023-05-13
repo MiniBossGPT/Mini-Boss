@@ -117,14 +117,46 @@ class Buddy:
                 logger.log_markdown(markdown_text)
 
                 target_directory = f"{os.getcwd()}/auto-gpt"
-                ##############################################
-                ### Disable this block to test
-                ##############################################
                 buddy_settings = f"{os.getcwd()}/buddy_settings.yaml"
-                # # todo: plug in all of the options here
-                # # command = ["python3", "-m", "autogpt", "--gpt3only", "--continuous", "-C", buddy_settings,"-m", "local"]
-                # # command = ["python3", "-m", "autogpt", "--gpt3only", "-C", buddy_settings,"-m", "local"]
-                command = ["python3", "-m", "autogpt", "-C", buddy_settings]
+                command = [
+                    "python3",
+                    "-m",
+                    "autogpt",
+                    "-C",
+                    buddy_settings,
+                    "-m",
+                    CFG.memory_backend,
+                    "-b",
+                    CFG.selenium_web_browser,
+                ]
+
+                if CFG.smart_llm_model == "gpt-3.5-turbo":
+                    command.append("--gpt3only")
+                elif CFG.set_smart_llm_model == "gpt4":
+                    command.append("--gpt4only")
+
+                command.extend(["--skip-reprompt", "--skip-news"])
+
+                if CFG.continuous_mode:
+                    command.extend(
+                        [
+                            "--continuous",
+                            "--continuous_limit",
+                            str(CFG.continuous_limit),
+                        ]
+                    )
+
+                if CFG.debug_mode:
+                    command.append("--debug")
+
+                if CFG.speak_mode:
+                    command.append("--speak")
+
+                if CFG.allow_downloads:
+                    command.append("--allow-downloads")
+
+                if CFG.install_plugin_deps:
+                    command.append("--install-plugin-deps")
 
                 ##############################################
                 # to test completetion loop disable this block
@@ -261,7 +293,6 @@ class Buddy:
         Returns:
             Tuple[str, dict]: A tuple containing the self-feedback response and the assistant reply JSON.
         """
-        # todo: this has to be modified to evaluate the its results
         assistant_reply_json = {
             "thoughts": {
                 "text": "My task is complete",
@@ -285,10 +316,18 @@ class Buddy:
         )
         logger.log_markdown(markdown_text)
         display_feedback = self_feedback_resp.replace(
-            "Y ",
-            "I have completed my task, and I have concluded based on my results that, ",
+            "Y. ",
+            "",
         )
-        markdown_text = f"``` {display_feedback}```"
+        display_feedback = display_feedback.replace(
+            "Y ",
+            "",
+        )
+        final_feedback = (
+            f"{self.ai_name} has completed its task, and has concluded based it its results that:"
+            + display_feedback
+        )
+        markdown_text = f"``` {final_feedback}"
         logger.log_markdown(markdown_text)
         return display_feedback, assistant_reply_json
 
@@ -417,8 +456,6 @@ class Buddy:
         Returns:
             Tuple[str, str]: A tuple containing the result of the command execution and the command name (if applicable).
         """
-        print("Executing command: ", command_name)
-        print("With arguments: ", arguments)
         if command_name is not None and command_name.lower().startswith("error"):
             return (
                 f"Command {command_name} threw the following error: {arguments}",

@@ -18,7 +18,7 @@ from miniboss.url_utils.validators import validate_url
 CFG = Config()
 BUDDY_MANAGER = BuddyManager()
 BOSS_MANAGER = BossManager()
-os.environ["TF_CPP_MIN_LOG_LEVEL"] = "4"
+os.environ["TF_CPP_MIN_LOG_LEVEL"] = "3"
 
 
 def is_valid_int(value: str) -> bool:
