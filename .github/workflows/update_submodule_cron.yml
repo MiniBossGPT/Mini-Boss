@@ -1,6 +1,7 @@
 name: Update Submodule (Cron)
 
 on:
+  workflow_dispatch:
   schedule:
     - cron: '0 * * * *' # Every hour, you can adjust this according to your needs
 
@@ -13,24 +14,24 @@ jobs:
       uses: actions/checkout@v3
       with:
         submodules: 'recursive'
-        ref: 'stable'
 
     - name: Check for updates
       id: check_updates
       run: |
         UPDATED=$(git status --porcelain)
         if [ -z "$UPDATED" ]; then
-          echo "::set-output name=updated::false"
+          echo "updated=false" >> $GITHUB_OUTPUT
         else
-          echo "::set-output name=updated::true"
+          echo "updated=true" >> $GITHUB_OUTPUT
         fi
       shell: bash
 
     - name: Commit and push changes
       if: steps.check_updates.outputs.updated == 'true'
       run: |
-        git config --global user.name "MiniBossGPT"
-        git config --global user.email "minibossgpt@gmail.com"
-        git add auto-gpt
-        git commit -m "Update submodule to latest stable"
+        date > generated.txt
+        git config user.name github-actions
+        git config user.email github-actions@github.com
+        git add .
+        git commit -m "generated"
         git push
