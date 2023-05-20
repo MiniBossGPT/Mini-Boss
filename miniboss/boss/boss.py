@@ -3,8 +3,8 @@ from pathlib import Path
 
 from colorama import Fore, Style
 
-from miniboss.app import execute_boss_command, get_boss_command
-from miniboss.buddy.buddy import Buddy
+from miniboss.agent.buddy import Buddy
+from miniboss.app import execute_command, get_command
 from miniboss.config.config import Config
 from miniboss.json_utils.utilities import LLM_DEFAULT_RESPONSE_FORMAT, validate_json
 from miniboss.llm import create_chat_completion, create_chat_message
@@ -64,7 +64,7 @@ class Boss:
         _resolve_pathlike_command_args(command_args): Resolves path-like command arguments.
         parse_auto_gpt_logs(): Parses the auto-gpt logs.
         get_self_feedback(thoughts, llm_model): Generates self-feedback based on the thoughts.
-        get_self_feedback_on_buddy(thoughts, llm_model, results): Generates self-feedback on the buddy based on the thoughts and results.
+        get_self_feedback_on_buddy(thoughts, llm_model, results): Generates self-feedback on the agent based on the thoughts and results.
         log_and_save_results(logger, buddy_name, status, markdown_text, config, i, performance_grade, target_percentage, CFG): Logs and saves the results.
         build_assistant_reply(status, i, task, buddy_name, performance_grade, target_percentage): Builds the assistant's reply based on the status and other parameters.
         handle_command_error(command_name, arguments): Handles the command error.
@@ -142,6 +142,7 @@ class Boss:
         Returns:
             None
         """
+
         # Interaction Loop
         cfg = Config()
         loop_count = 0
@@ -168,6 +169,7 @@ class Boss:
 
             send_chat_message_to_user("Thinking... \n")
 
+            # for i, task in enumerate(self.config.ai_tasks, start=1):
             for i, task in enumerate(self.config.ai_tasks):
                 buddy_name = "Buddy-{}".format(i)
                 BUDDY_JOB_COMPLETE = False
@@ -204,7 +206,7 @@ class Boss:
 
                 while not BUDDY_JOB_COMPLETE:
                     if buddy_workspace_directory is None:
-                        workspace_name = "miniboss_workspace/buddy-{}-workspace".format(
+                        workspace_name = "miniboss_workspace/agent-{}-workspace".format(
                             i
                         )
                         buddy_workspace_directory = (
@@ -262,6 +264,7 @@ class Boss:
                     # Create a new dictionary with all values from final_result
                     new_final_result = buddy.final_result.copy()
                     # Use the evaluation function to grade the worker's performance
+                    # todo: this is invalid - because a worker can fail
                     performance_grade = self.evaluate_worker_performance_hf(feedback)
                     new_final_result["performance_grade"] = performance_grade
                     self.config.ai_task_results[i]["score"] = performance_grade
@@ -334,7 +337,7 @@ class Boss:
                     else:
                         user_input = self_feedback_resp
 
-                    command_name, arguments = get_boss_command(assistant_reply_json)
+                    command_name, arguments = get_command(assistant_reply_json)
                     # if cfg.speak_mode:
                     #     say_text(f"I want to execute {command_name}")
                     # print(f"Command Name : {command_name}")
@@ -611,7 +614,7 @@ The user is going to provide you with the response from the worker, and you will
         feedback_prompt = f"""As a supervisor AI with the role of {ai_role}, please provide a detailed review of the worker's performance.
 Consider the worker's Thought, Reasoning, Plan, and Criticism in your analysis.
 Rate the performance on a scale of 1-10, with 1 being 'extremely ineffective' and 10 being 'extremely effective'.
-Please also provide a detailed explanation for your rating and, if applicable, suggestions for improvement."""
+Please also provide a detailed explanation for your rating and, if applicable, suggestions for improvement. If the worker failed to complete the task, please provide an explanation of why the worker failed to complete the task."""
 
         reasoning = thoughts.get("reasoning", "")
         plan = thoughts.get("plan", "")
@@ -653,16 +656,16 @@ Please also provide a detailed explanation for your rating and, if applicable, s
 
         This method logs the provided `markdown_text`, updates the status of the task in the
         `ai_task_results` configuration, and saves the configuration to a file. It also logs the
-        buddy's name, the status in uppercase, the performance grade, and the target percentage.
+        agent's name, the status in uppercase, the performance grade, and the target percentage.
 
         Args:
             logger: The logger instance used for logging.
-            buddy_name (str): The name of the buddy.
+            buddy_name (str): The name of the agent.
             status (str): The status of the task ('complete' or 'failed').
             markdown_text (str): The markdown text to be logged.
             config: The configuration instance.
             i (int): The index of the task.
-            performance_grade (float): The performance grade of the buddy.
+            performance_grade (float): The performance grade of the agent.
             target_percentage (float): The target percentage for the task.
             CFG: The configuration constant.
 
@@ -684,15 +687,15 @@ Please also provide a detailed explanation for your rating and, if applicable, s
         """Build the assistant's reply based on task completion status.
 
         This method builds the assistant's reply based on the provided status, task details,
-        buddy's name, performance grade, and target percentage. It constructs the 'thoughts'
+        agent's name, performance grade, and target percentage. It constructs the 'thoughts'
         and 'command' sections of the assistant's reply JSON.
 
         Args:
             status (str): The status of the task ('complete' or 'failed').
             i (int): The index of the task.
             task (str): The task description.
-            buddy_name (str): The name of the buddy.
-            performance_grade (float): The performance grade of the buddy.
+            buddy_name (str): The name of the agent.
+            performance_grade (float): The performance grade of the agent.
             target_percentage (float): The target percentage for the task.
 
         Returns:
@@ -763,7 +766,7 @@ Please also provide a detailed explanation for your rating and, if applicable, s
     ):
         """Execute a command.
 
-        This method executes a command by calling the `execute_boss_command` function with the
+        This method executes a command by calling the `execute_command` function with the
         provided command name, arguments, command registry, configuration, and prompt generator.
         It also calls the pre and post command methods of the registered plugins, if applicable.
 
@@ -783,7 +786,7 @@ Please also provide a detailed explanation for your rating and, if applicable, s
                 continue
             command_name, arguments = plugin.pre_command(command_name, arguments)
 
-        command_result = execute_boss_command(
+        command_result = execute_command(
             command_registry,
             command_name,
             arguments,
