@@ -1,5 +1,5 @@
 """
-This module contains the configuration classes for AutoGPT.
+This module contains the configuration classes for MiniBoss.
 """
 from miniboss.config.autogpt_config import AutoGPTConfig
 from miniboss.config.boss_config import BossConfig

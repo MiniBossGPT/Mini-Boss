@@ -85,9 +85,9 @@ def main(
     install_plugin_deps: bool,
 ) -> None:
     """
-    Welcome to AutoGPT an experimental open-source application showcasing the capabilities of the GPT-4 pushing the boundaries of AI.
+    Welcome to MiniBoss an experimental open-source application showcasing the capabilities of the GPT-4 pushing the boundaries of AI.
 
-    Start an Mini-Boss assistant.
+    Start a Mini-Boss assistant.
     """
     # Put imports inside function to avoid importing everything when starting the CLI
     from miniboss.main import run_miniboss

@@ -58,7 +58,7 @@ def prompt_buddy(user_desire=str, target_percentage=float, name=str) -> BuddyCon
     Args:
         user_desire (str): The user's desired task.
         target_percentage (float): The target performance grade.
-        name (str): The name of the buddy.
+        name (str): The name of the agent.
 
     Returns:
         BuddyConfig: The BuddyConfig object tailored to the user's input.
@@ -99,7 +99,7 @@ def generate_aiconfig_manual() -> BossConfig:
         f"{ai_name} here!", Fore.LIGHTBLUE_EX, "I am at your service.", speak_text=False
     )
 
-    ai_role = "you are an AI designed to autonomously deploy worker agent buddy's to professionally solve the desired goal of the user"
+    ai_role = "you are an AI designed to autonomously deploy worker agent agent's to professionally solve the desired goal of the user"
 
     # Enter up to 5 goals for the AI
     logger.typewriter_log(
@@ -164,12 +164,11 @@ def generate_aiconfig_automatic(user_prompt) -> BossConfig:
     Returns:
         BossConfig: The BossConfig object tailored to the user's input.
     """
+    system_prompt = f"""Your task is to act as the MiniBoss, an orchestrator of sub-tasks. Your role involves decomposing the main goal provided by the user into manageable tasks that can be assigned to autonomous workers (Buddies).
+    Each task needs to be self-contained, actionable, and result-oriented, leading to a tangible output that contributes directly to the main goal.
+    As the MiniBoss, your job is to structure and distribute the workload, not to execute the tasks or seek information yourself. Therefore, focus on creating tasks that a Buddy can interpret and refine into specific actions to be performed by an auto-gpt instance.
 
-    system_prompt = f"""Your task is to act as the MiniBoss, an orchestrator of sub-tasks. Your role involves developing a detailed working plan to accomplish the main goal provided by the user.
-    The working plan should contain a series of actionable steps, each of which can be assigned to an autonomous worker (Buddy) for execution.
-    Remember, the Buddies are not privy to the overall plan; they only receive the specific sub-tasks you assign to them. Therefore, each sub-task needs to be self-contained, actionable, and result-oriented. Each sub-task should lead to a tangible output that contributes directly to the main goal.
-    In your task assignments, prioritize quick solutions that leverage existing resources. Encourage the use of internet searches like Google or Bing to rapidly gather necessary information or solve problems rather than creating new APIs or software.
-    The user will provide the main task. Your output should be in the exact format specified in the example output below, with no additional explanation or conversation.
+    The user will provide the main task. Your output should be in the exact format specified in the example output below, with no additional explanation or conversation. Never ask for any more input to define any criteria or parameters for the task.
 
         The current date is {print_todays_date()}.
 
@@ -178,11 +177,10 @@ def generate_aiconfig_automatic(user_prompt) -> BossConfig:
 
         Example output:
         Name: StockAnalysisBot-MiniBoss
-        Role: Devise a strategic plan to efficiently analyze and report on the performance of Tesla's stock price for the current week, considering today's date is {print_todays_date()}. This involves coordinating autonomous agents to collect, analyze, and summarize the relevant data.
+        Role: Decompose the task of analyzing and reporting on the performance of Tesla's stock price for the current week into discrete, manageable tasks for autonomous workers (Buddies).
         Tasks:
-        - DataCollector: Use Google or Bing search to retrieve the most recent and reliable Tesla's stock prices for the current week. Your task is to prioritize speed and accuracy in your data collection.
-        - DataAnalyzer: Perform a detailed analysis on the retrieved data to discern patterns, trends, and notable events. Your analysis should enable clear insights into Tesla's stock performance this week.
-        - ReportWriter: Compile the insights from the data analysis into a clear, concise report summarizing the performance of Tesla's stock price this week.
+        - AnalyzeStock: Analyze Tesla's stock price for the current week.
+        - CompileReport: Compile a report summarizing the analysis.
         """
 
     # Call LLM with the string as user input
@@ -193,7 +191,7 @@ def generate_aiconfig_automatic(user_prompt) -> BossConfig:
         },
         {
             "role": "assistant",
-            "content": "Your main focus should be on devising a strategic plan, breaking down the user's task into self-contained, actionable steps. Each step should be defined clearly and lead to a tangible output that directly contributes to the main task. Remember to assign each step to an appropriate autonomous worker role. Keep your output strictly within the format specified in the system prompt, without any additional explanation or conversation.",
+            "content": """Your primary responsibility is to break down the given task into clear, manageable steps, each leading to a tangible output that directly contributes to the overall goal. Ensure each step is self-contained, actionable, and assigned to the appropriate autonomous worker role (Buddy). Remember to keep your output strictly within the format specified in the system prompt, without any additional explanation or conversation.""",
         },
         {
             "role": "user",
@@ -232,41 +230,40 @@ def generate_aiconfig_automatic_buddy_gpt(
     Args:
         user_prompt (str): The user's task prompt.
         target_percentage (float): The target performance percentage.
-        name (str): The name of the buddy.
+        name (str): The name of the agent.
 
     Returns:
         BuddyConfig: The BuddyConfig object tailored to the user's input.
     """
 
-    system_prompt = f"""
-        Your task is to act as a Buddy, an autonomous worker. You will be assigned a specific task to complete, and you must develop 1 to 2 strategic goals to achieve this task effectively. Additionally, assign yourself an appropriate role-based name (StockDataCollector-Buddy) to reflect your function in the task.
+    buddy_system_prompt = f"""
+        Your task is to act as a Buddy, an autonomous worker. You will be assigned a specific task to complete by the MiniBoss, and your role is to refine this task into a single strategic goal that can be effectively executed by an auto-gpt instance. Additionally, assign yourself an appropriate role-based name (StockDataCollector-Buddy) to reflect your function in the task.
 
-        Remember, you are an autonomous agent whose goal is to achieve the task quickly and efficiently. To do this, prioritize using internet searches to gather necessary information or solve problems. Unless it is absolutely necessary, you should avoid writing or suggesting code.
+        Remember, you are an autonomous agent whose goal is to refine the assigned task into a specific, actionable step for an auto-gpt instance. You are not responsible for executing the task or gathering information yourself.
 
-        The MiniBoss will provide you with the task you need to complete. Your output should be in the exact format specified in the example output below, with no additional explanation or conversation.
+        The MiniBoss will provide you with the task you need to complete. Your output should be in the exact format specified in the example output below, with no additional explanation or conversation. Never ask for any more input to define any criteria or parameters for the task.
 
         The current date is {print_todays_date()}.
 
         Example input:
-        Use appropriate data sources to retrieve Tesla's stock prices for the current week.
+        IdentifyPoorPerformers: Identify stocks that had a bad week.
 
         Example output:
-        Name: StockDataCollector-Buddy
-        Role: My task is to rapidly and accurately retrieve Tesla's stock prices for the current week, considering today's date is {print_todays_date()}.
-        Goals:
-        - Utilize internet search engines like Google or Bing to identify the most appropriate and reliable data sources for retrieving Tesla's stock prices for the current week. Ensure the data is recent and accurate.
-        - Extract the necessary stock price data and save it in a format that can be easily analyzed. Promptly complete your task, ensuring the data is ready for further analysis.
+        Name: StockPerformanceAnalyzer-Buddy
+        Role: My task is to provide a precise action plan for the auto-gpt instance to quickly identify stocks that had a bad week by searching the internet.
+        Goal:
+        - ExecuteStockAnalysis: Perform a quick search on the internet in the fewest possible steps to analyze the performance of stocks in the past week. Identify those with a significant decrease in value and compile a list. This process needs to be fast and efficient, using code if necessary, but try to avoid it as it takes more steps. Remember to save your work and ask no questions, and promptly complete your task in as few steps as possible.
         """
 
     # Call LLM with the string as user input
     messages = [
         {
             "role": "system",
-            "content": system_prompt,
+            "content": buddy_system_prompt,
         },
         {
             "role": "assistant",
-            "content": "As an autonomous worker, your focus should be on achieving your assigned task quickly and accurately. Formulate clear goals that align with your task. Avoid suggesting or writing code unless your task explicitly requires it. If you're provided a location of a previous worker's data file, ensure you search the directory first. Adhere strictly to the format specified in the system prompt, providing no additional explanation or conversation.",
+            "content": """Your main task is to refine the task given by the MiniBoss into a single, highly specific, actionable goal that can be effectively carried out by an auto-gpt instance. Keep in mind, your role is to refine and plan, not to execute or gather information. Make sure your output is strictly within the format specified in the system prompt, without any additional explanation or conversation.""",
         },
         {
             "role": "user",

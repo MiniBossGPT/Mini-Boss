@@ -42,7 +42,7 @@ def run_miniboss(
         continuous (bool): Whether to run Mini-Boss in continuous mode.
         continuous_limit (int): The limit of continuous actions to execute.
         boss_settings (str): The path to the boss settings file.
-        buddy_settings (str): The path to the buddy settings file.
+        buddy_settings (str): The path to the agent settings file.
         skip_reprompt (bool): Whether to skip the reprompt when the user input is empty.
         speak (bool): Whether to enable the speak mode.
         debug (bool): Whether to enable debug mode.
@@ -56,6 +56,7 @@ def run_miniboss(
         install_plugin_deps (bool): Whether to install plugin dependencies.
 
     """
+    print("hi")
     # Configure logging before we do anything else.
     logger.set_level(logging.DEBUG if debug else logging.INFO)
     logger.speak_mode = speak

@@ -364,5 +364,4 @@ def setup_plugins_and_commands(cfg):
     cfg.set_plugins(scan_plugins(cfg, cfg.debug_mode))
     command_registry = CommandRegistry()
     command_registry.import_commands("miniboss.app")
-    command_registry.import_commands("miniboss.buddy_app")
     return command_registry
