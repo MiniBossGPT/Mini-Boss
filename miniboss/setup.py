@@ -250,7 +250,7 @@ def generate_aiconfig_automatic_buddy_gpt(
 
         Example output:
         Name: StockPerformanceAnalyzer-Buddy
-        Role: My task is to provide a precise action plan for the auto-gpt instance to quickly identify stocks that had a bad week by searching the internet.
+        Role: Perform a quick search on the internet in the fewest possible steps to analyze the performance of stocks in the past week.
         Goal:
         - ExecuteStockAnalysis: Perform a quick search on the internet in the fewest possible steps to analyze the performance of stocks in the past week. Identify those with a significant decrease in value and compile a list. This process needs to be fast and efficient, using code if necessary, but try to avoid it as it takes more steps. Remember to save your work and ask no questions, and promptly complete your task in as few steps as possible.
         """
@@ -263,7 +263,7 @@ def generate_aiconfig_automatic_buddy_gpt(
         },
         {
             "role": "assistant",
-            "content": """Your main task is to refine the task given by the MiniBoss into a single, highly specific, actionable goal that can be effectively carried out by an auto-gpt instance. Keep in mind, your role is to refine and plan, not to execute or gather information. Make sure your output is strictly within the format specified in the system prompt, without any additional explanation or conversation.""",
+            "content": """Your main task is to refine the task given by the MiniBoss into a single, highly specific, actionable goal that can be effectively carried out by an auto-gpt instance. Keep in mind, you need to define the role for the auto-gpt instance as well. Make sure your output is strictly within the format specified in the system prompt, without any additional explanation or conversation.""",
         },
         {
             "role": "user",
